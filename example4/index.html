@@ -2,22 +2,14 @@
   <head>
     <script type="text/javascript" src="js/main.js"></script>
     <script type="text/javascript" src="js/textmode.js"></script>
-    <style type="text/css">
-      body {
-        margin: 0;
-        width: 100svw;
-        height: 100svh;
-      }
-      canvas {
-        /* border: 40px solid #000000; */
-        width: 100svw;
-        height: 100svh;
-      }
-      /* https://stackoverflow.com/questions/30855985/pure-css-animation-visibility-with-delay */
-      /* Use the technique above to show the scroll down button in the Astro page */
-    </style>
   </head>
-  <body onload="init();">
-    <canvas id="mainCanvas" width="0" height="0"></canvas>
+  <body onload="init();" style="margin: 0; width: 100svw; height: 100svh">
+    <canvas
+      id="mainCanvas"
+      width="0"
+      height="0"
+      style="width: 100svw; height: 100svh"
+    ></canvas>
+    <!-- Use the technique above to show the scroll down button in the Astro page: https://stackoverflow.com/questions/30855985/pure-css-animation-visibility-with-delay  -->
   </body>
 </html>

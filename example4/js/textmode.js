@@ -1,129 +1,167 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// 16 value colour table
-///////////////////////////////////////////////////////////////////////////////////////////////////
+const CHARACTER_WIDTH = 16;
+const CHARACTER_HEIGHT = 24;
 
-var colourTable = ['#000000', '#0000AA', '#00AA00', '#00AAAA',
-                   '#AA0000', '#AA00AA', '#AA5500', '#AAAAAA',
-                   '#555555', '#5555FF', '#55FF55', '#55FFFF', 
-                   '#FF5555', '#FF55FF', '#FFFF55', '#FFFFFF'];
+class TextModeScreen {
+  /**
+   * 16 value colour table
+   */
+  #COLOR_TABLE = [
+    "#000000",
+    "#0000AA",
+    "#00AA00",
+    "#00AAAA",
+    "#AA0000",
+    "#AA00AA",
+    "#AA5500",
+    "#AAAAAA",
+    "#555555",
+    "#5555FF",
+    "#55FF55",
+    "#55FFFF",
+    "#FF5555",
+    "#FF55FF",
+    "#FFFF55",
+    "#FFFFFF",
+  ];
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Initialise the textmode object
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-function TextModeScreen(charsWide, charsHigh, canvasName, sourceFont) {
-    var canvas = document.getElementById(canvasName);
+  constructor(charsWide, charsHigh, canvasName, sourceFont) {
+    const canvas = document.getElementById(canvasName);
     if (!canvas) {
-        alert("Failed to find canvas");
-        return;
+      alert("Failed to find canvas");
+      return;
     }
     this.context2d = canvas.getContext("2d");
     if (!this.context2d) {
-        alert("Couldn't get 2d context on canvas");
-        return;
+      alert("Couldn't get 2d context on canvas");
+      return;
     }
-    
+
     // Setup canvas size and buffers
-    canvas.width = charsWide * 16;
-    canvas.height = charsHigh * 24;
+    canvas.width = charsWide * CHARACTER_WIDTH;
+    canvas.height = charsHigh * CHARACTER_HEIGHT;
     this.charsWide = charsWide;
     this.charsHigh = charsHigh;
-    this.charBuffer = new Uint8Array(charsWide * charsHigh)
-    this.colourBuffer = new Uint8Array(charsWide * charsHigh)
+    this.charBuffer = new Uint8Array(charsWide * charsHigh);
+    this.colourBuffer = new Uint8Array(charsWide * charsHigh);
 
     // Create foreground font colours
-    this.colouredFonts = new Array(16);
-    for (i = 0; i < 16; i++) {
-        this.colouredFonts[i] = document.createElement('canvas');
-        this.colouredFonts[i].width = sourceFont.width;
-        this.colouredFonts[i].height = sourceFont.height;
-        var bufferContext = this.colouredFonts[i].getContext('2d');
-        bufferContext.fillStyle = colourTable[i];
-        bufferContext.fillRect(0, 0, sourceFont.width, sourceFont.height);
-        bufferContext.globalCompositeOperation = "destination-atop";
-        bufferContext.drawImage(sourceFont, 0, 0);
+    this.coloredFonts = new Array(this.#COLOR_TABLE.length);
+    for (let i = 0; i < this.coloredFonts.length; i++) {
+      this.coloredFonts[i] = document.createElement("canvas");
+      this.coloredFonts[i].width = sourceFont.width;
+      this.coloredFonts[i].height = sourceFont.height;
+      const bufferContext = this.coloredFonts[i].getContext("2d");
+      bufferContext.fillStyle = this.#COLOR_TABLE[i];
+      bufferContext.fillRect(0, 0, sourceFont.width, sourceFont.height);
+      bufferContext.globalCompositeOperation = "destination-atop";
+      bufferContext.drawImage(sourceFont, 0, 0);
     }
-}
+  }
 
+  /**
+   * Render buffers to the HTML canvas
+   * */
+  presentToScreen() {
+    for (
+      let readPosition = 0;
+      readPosition < this.charsWide * this.charsHigh;
+      readPosition++
+    ) {
+      const x = readPosition % this.charsWide;
+      const y = Math.floor(readPosition / this.charsWide);
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Render buffers to the HTML canvas
-///////////////////////////////////////////////////////////////////////////////////////////////////
+      const startY = y * CHARACTER_HEIGHT;
+      const startX = x * CHARACTER_WIDTH;
 
-TextModeScreen.prototype.presentToScreen = function() {
-    var readPos = 0;
-    var sy = 0;
-    for (y = 0; y < this.charsHigh; y++) {
-        var sx = 0;
-        for (x = 0; x < this.charsWide; x++) {
-            var charId = this.charBuffer[readPos];
-            var colourId = this.colourBuffer[readPos];
-            readPos++;
+      const charId = this.charBuffer[readPosition];
+      const colorId = this.colourBuffer[readPosition];
 
-            var cx = (charId & 0x0f) * 16;
-            var cy = (charId >> 4) * 24;
-            this.context2d.fillStyle = colourTable[colourId >> 4];
-            this.context2d.fillRect(sx, sy, 16, 24);
-            this.context2d.drawImage(this.colouredFonts[colourId & 15], cx, cy, 16, 24, sx, sy, 16, 24);
-            
-            sx += 16;
-        }
-        sy += 24;
+      const characterSpriteX = (charId & 0x0f) * CHARACTER_WIDTH;
+      const characterSpriteY = (charId >> 4) * CHARACTER_HEIGHT;
+
+      this.context2d.fillStyle = this.#COLOR_TABLE[colorId >> 4];
+      this.context2d.fillRect(
+        startX,
+        startY,
+        CHARACTER_WIDTH,
+        CHARACTER_HEIGHT,
+      );
+      this.context2d.drawImage(
+        this.coloredFonts[colorId & 15],
+        characterSpriteX,
+        characterSpriteY,
+        CHARACTER_WIDTH,
+        CHARACTER_HEIGHT,
+        startX,
+        startY,
+        CHARACTER_WIDTH,
+        CHARACTER_HEIGHT,
+      );
     }
-}
+  }
 
+  /**
+   * Print a string
+   */
+  print(x, y, text, color) {
+    if (y < 0 || y >= this.charsHigh) return;
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Print a string
-///////////////////////////////////////////////////////////////////////////////////////////////////
+    for (let i = 0; i < text.length; i++) {
+      if (x + i < 0 || this.charsWide <= x + i) continue;
 
-TextModeScreen.prototype.print = function(x, y, text, colour) {
-    if (y >= 0 && y < this.charsHigh) {
-        var writePos = x + y * this.charsWide;
-        for (i = 0; i < text.length; i++) {
-            if (x + i >= 0 && x + i < this.charsWide) {
-                this.charBuffer[writePos] = text.charCodeAt(i);
-                this.colourBuffer[writePos] = colour;
-            }
-            writePos++;
-        }
+      const writePosition = x + y * this.charsWide + i;
+      this.charBuffer[writePosition] = text.charCodeAt(i);
+      this.colourBuffer[writePosition] = color;
     }
-}
+  }
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Print an outlined box
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-TextModeScreen.prototype.printBox = function(x, y, w, h, colour) {
-    var innerWidth = w - 2;
-    this.print(x, y, String.fromCharCode(201) + Array(innerWidth + 1).join(String.fromCharCode(205)) + String.fromCharCode(187), colour);
+  /**
+   * Print an outlined box
+   * @param {number} x - X position
+   * @param {number} y - Y position
+   * @param {number} w - Width
+   * @param {number} h - Height
+   * @param {number} color - Color
+   */
+  printBox(x, y, w, h, color) {
+    const innerWidth = w - 2;
+    this.print(x, y, `É${Array(innerWidth + 1).join("Í")}»`, color);
     for (j = y + 1; j < y + h - 1; j++) {
-        this.print(x, j, String.fromCharCode(186) + Array(innerWidth + 1).join(" ") + String.fromCharCode(186), colour);
+      this.print(x, j, `º${Array(innerWidth + 1).join(" ")}º`, color);
     }
-    this.print(x, y + h - 1, String.fromCharCode(200) + Array(innerWidth + 1).join(String.fromCharCode(205)) + String.fromCharCode(188), colour);
-}
+    this.print(x, y + h - 1, `È${Array(innerWidth + 1).join("Í")}¼`, color);
+  }
 
+  /**
+   * Process a group of characters with a user defined function
+   */
+  processBox(x, y, w, h, func) {
+    for (let sy = y; sy < y + h; sy++) {
+      if (sy < 0 || this.charsHigh < sy) continue;
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Process a group of characters with a user defined function
-///////////////////////////////////////////////////////////////////////////////////////////////////
+      for (let i = 0; i < w; i++) {
+        const sx = x + i;
+        const readWritePos = x + sy * this.charsWide + i;
 
-TextModeScreen.prototype.processBox = function(x, y, w, h, func) {
-    for (sy = y; sy < y + h; sy++) {
-        if (sy >= 0 && sy <= this.charsHigh) {
-            var readWritePos = x + sy * this.charsWide;
-            for (sx = x; sx < x + w; sx++) {
-                if (sx >= 0 && sx <= this.charsWide) {
-                    var charId = this.charBuffer[readWritePos];
-                    var colourId = this.colourBuffer[readWritePos];
-                    var results = func(charId, colourId);
-                    this.charBuffer[readWritePos] = results[0];
-                    this.colourBuffer[readWritePos] = results[1];
-                }
-                readWritePos++;
-            }
-        }
+        if (sx < 0 || this.charsWide < sx) continue;
+
+        const charId = this.charBuffer[readWritePos];
+        const colorId = this.colourBuffer[readWritePos];
+        const results = func(charId, colorId);
+        this.charBuffer[readWritePos] = results[0];
+        this.colourBuffer[readWritePos] = results[1];
+      }
+
+      // let readWritePos = x + sy * this.charsWide;
+      // for (let sx = x; sx < x + w; sx++, readWritePos++) {
+      //   if (sx < 0 || this.charsWide < sx) continue;
+      //
+      //   const charId = this.charBuffer[readWritePos];
+      //   const colorId = this.colourBuffer[readWritePos];
+      //   const results = func(charId, colorId);
+      //   this.charBuffer[readWritePos] = results[0];
+      //   this.colourBuffer[readWritePos] = results[1];
+      // }
     }
+  }
 }
