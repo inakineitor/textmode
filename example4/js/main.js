@@ -11,32 +11,6 @@ const NAME = `    .....     .    ,68b.   ,                     ..         .
 '  '8888   '88%     ""   'Y"   "888*""888" '"888*" 4888"   R888" 
      "*8Nu.z*"                  ^Y"   ^Y'     ""    ""      ""   `;
 
-const OLD_HELEN_NAME = `.---.  .---.     .-''-.    .---.       .-''-.  ,---.   .--.
-|   |  |_ _|   .'_ _   \\   | ,_|     .'_ _   \\ |    \\  |  |
-|   |  ( ' )  / ( \` )   ',-./  )    / ( \` )   '|  ,  \\ |  |
-|   '-(_{;}_). (_ o _)  |\\  '_ '\`) . (_ o _)  ||  |\\_ \|  | 
-|      (_,_) |  (_,_)___| > (_)  ) |  (_,_)___||  _( )_\\  |
-| _ _--.   | '  \\   .---.(  .  .-' '  \\   .---.| (_ o _)  |
-|( ' ) |   |  \\  \`-'    / \`-'\`-'|___\  \`-'    /|  (_,_)\\  | 
-(_{;}_)|   |   \\       /   |        \\       / |  |    |  | 
-'(_,_) '---'    \`'-..-'    \`--------\` \`'-..-'  '--'    '--'`;
-
-const OLD_HELEN = `                                       ..                         
-         .xHL                    x .d88"                          
-      .-\`8888hxxx~                5888R                 u.    u.  
-   .H8X  \`%888*"           .u     '888R        .u     x@88k u@88c.
-   888X     ..x..       ud8888.    888R     ud8888.  ^"8888""8888"
-  '8888k .x8888888x   :888'8888.   888R   :888'8888.   8888  888R 
-   ?8888X    "88888X  d888 '88%"   888R   d888 '88%"   8888  888R 
-    ?8888X    '88888> 8888.+"      888R   8888.+"      8888  888R 
- H8H %8888     \`8888> 8888L        888R   8888L        8888  888R 
-'888> 888"      8888  '8888c. .+  .888B . '8888c. .+  "*88*" 8888"
- "8\` .8" ..     88*    "88888%    ^*888%   "88888%      ""   'Y"  
-    \`  x8888h. d*"       "YP'       "%       "YP'                 
-      !""*888%~                                                   
-      !   \`"  .                                                   
-      '-....:~                                                    `;
-
 const RANDOM_SEED = 360;
 
 /**
@@ -88,7 +62,19 @@ let startTime = 0;
 
 function init() {
   // Initialise the textmode library
-  screenManager = new TextModeScreen(100, 35, "mainCanvas", sourceFont);
+  const canvas = document.getElementById("mainCanvas");
+  console.log(canvas);
+  screenManager = new TextModeScreen(100, 35, canvas, sourceFont);
+
+  const resizeObserver = new ResizeObserver(([canvasEntry]) => {
+    const {
+      contentRect: { width, height },
+    } = canvasEntry;
+    console.log(width);
+    console.log(height);
+    console.log("Size changed");
+  });
+  resizeObserver.observe(canvas);
 
   startTime = Date.now();
   // Call our main loop at 25fps

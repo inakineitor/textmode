@@ -24,8 +24,7 @@ class TextModeScreen {
     "#FFFFFF",
   ];
 
-  constructor(charsWide, charsHigh, canvasName, sourceFont) {
-    const canvas = document.getElementById(canvasName);
+  constructor(charsWide, charsHigh, canvas, sourceFont) {
     if (!canvas) {
       alert("Failed to find canvas");
       return;
