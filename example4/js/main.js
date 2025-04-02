@@ -112,9 +112,37 @@ function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
 }
 
+function scrollDownSign(screenManager) {
+  const instructionText = "Scroll down to learn more";
+
+  const startRow = Math.floor((screenManager.charsHigh / 6) * 5);
+  const startCol = Math.floor(
+    (screenManager.charsWide - instructionText.length) / 2,
+  );
+
+  screenManager.printBox(
+    startCol - 2,
+    startRow - 1,
+    instructionText.length + 4,
+    3,
+    0x0f,
+  );
+  screenManager.print(startCol, startRow, instructionText, 0x0f);
+}
+
+function randomBrightColor() {
+  // const colors = [2, 3, 4, 5, 6, 7, 8];
+  // return colors[Math.floor(Math.random() * colors.length)];
+  return Math.floor(10 + Math.random() * 5);
+  return 0x0f;
+}
+
 function mainLoop() {
+  const previousCharBuffer = new Uint8Array(screenManager.charBuffer);
+  const previousColorBuffer = new Uint8Array(screenManager.colourBuffer);
+
   // Fill the screen with random characters and colours
-  for (i = 0; i < screenManager.charsWide * screenManager.charsHigh; i++) {
+  for (let i = 0; i < screenManager.charsWide * screenManager.charsHigh; i++) {
     screenManager.charBuffer[i] = getRandomCharFromName();
     screenManager.colourBuffer[i] = 0x0f;
   }
@@ -134,9 +162,26 @@ function mainLoop() {
     0,
     mergedName.length,
   );
+
   const revealedMask = generateRandomMask(
     mergedName.length,
     numberOfCharsRevealed,
+  );
+  const laggedRevealedMask = generateRandomMask(
+    mergedName.length,
+    clamp(
+      Math.floor((timeInSecondsSinceStart - 0.3) * 500) - 150,
+      0,
+      mergedName.length,
+    ),
+  );
+  const veryLaggedRevealedMask = generateRandomMask(
+    mergedName.length,
+    clamp(
+      Math.floor((timeInSecondsSinceStart - 0.3) * 500) - 250,
+      0,
+      mergedName.length,
+    ),
   );
 
   // Calculate the startRow and startCol such that the name is centered on the grid
@@ -166,8 +211,20 @@ function mainLoop() {
       ];
       if (!adjacentChars.some((c) => c !== " " && c !== undefined)) continue;
     }
-    screenManager.print(startCol + col, startRow + row, char, 0x0f);
+
+    const charPos = startCol + col + (startRow + row) * screenManager.charsWide;
+    const prevColor = previousColorBuffer[charPos];
+    const displayedLongAgo = laggedRevealedMask[i];
+    const setWhite = veryLaggedRevealedMask[i];
+    screenManager.print(
+      startCol + col,
+      startRow + row,
+      char,
+      setWhite ? 0x0f : displayedLongAgo ? prevColor : randomBrightColor(),
+    );
   }
+
+  scrollDownSign(screenManager);
 
   // Render the textmode screen to our canvas
   screenManager.presentToScreen();

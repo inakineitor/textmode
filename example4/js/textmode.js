@@ -118,17 +118,41 @@ class TextModeScreen {
    * Print an outlined box
    * @param {number} x - X position
    * @param {number} y - Y position
-   * @param {number} w - Width
-   * @param {number} h - Height
+   * @param {number} width - Width
+   * @param {number} height - Height
    * @param {number} color - Color
    */
-  printBox(x, y, w, h, color) {
-    const innerWidth = w - 2;
-    this.print(x, y, `É${Array(innerWidth + 1).join("Í")}»`, color);
-    for (j = y + 1; j < y + h - 1; j++) {
-      this.print(x, j, `º${Array(innerWidth + 1).join(" ")}º`, color);
+  printBox(x, y, width, height, color) {
+    const topLeft = String.fromCharCode(201);
+    const top = String.fromCharCode(205);
+    const topRight = String.fromCharCode(187);
+    const left = String.fromCharCode(186);
+    const right = String.fromCharCode(186);
+    const bottomLeft = String.fromCharCode(200);
+    const bottom = String.fromCharCode(205);
+    const bottomRight = String.fromCharCode(188);
+
+    const innerWidth = width - 2;
+    this.print(
+      x,
+      y,
+      `${topLeft}${Array(innerWidth + 1).join(top)}${topRight}`,
+      color,
+    );
+    for (let j = y + 1; j < y + height - 1; j++) {
+      this.print(
+        x,
+        j,
+        `${left}${Array(innerWidth + 1).join(" ")}${right}`,
+        color,
+      );
     }
-    this.print(x, y + h - 1, `È${Array(innerWidth + 1).join("Í")}¼`, color);
+    this.print(
+      x,
+      y + height - 1,
+      `${bottomLeft}${Array(innerWidth + 1).join(bottom)}${bottomRight}`,
+      color,
+    );
   }
 
   /**
