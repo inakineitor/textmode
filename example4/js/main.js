@@ -285,7 +285,7 @@ function mainLoop() {
   // Fill the screen with random characters and colours
   for (let i = 0; i < screenManager.charsWide * screenManager.charsHigh; i++) {
     screenManager.charBuffer[i] = getRandomCharFromName();
-    screenManager.colourBuffer[i] = 0x0f;
+    screenManager.colourBuffer[i] = 0x00;
   }
 
   const timeInSecondsSinceStart = (Date.now() - startTime) / 1000;
