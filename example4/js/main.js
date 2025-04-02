@@ -213,9 +213,16 @@ function scrollDownSign(screenManager, numChars) {
     coordinates.push([startCol + i, startRow, instructionText[i]]);
   }
 
-  for (let i = 0; i < Math.min(numChars, coordinates.length); i++) {
+  const totalDrawnChars = Math.min(numChars, coordinates.length);
+  for (let i = 0; i < totalDrawnChars; i++) {
     const [x, y, char] = coordinates[i];
-    screenManager.print(x, y, char, color);
+    screenManager.print(
+      x,
+      y,
+      char,
+      150 < i && numChars - 15 < i ? randomBrightColor() : color,
+      // i > numChars - 15 < i ? randomBrightColor() : color,
+    );
   }
 }
 
