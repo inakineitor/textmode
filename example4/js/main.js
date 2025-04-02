@@ -60,10 +60,24 @@ let startTime = 0;
 // Initialisation
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Track active effects
+let activeEffects = [];
+// Handle a new effect (e.g., from mouse click or key press)
+function startNewEffect(x, y, startTime = Date.now()) {
+  activeEffects.push({
+    x: x,
+    y: y,
+    startTime,
+    maxDistance: 100,
+    speed: 10, // cells per second
+    fadeTime: 0.6, // seconds to fade back to original
+    originalColor: 0x0f, // white
+  });
+}
+
 function init() {
   // Initialise the textmode library
   const canvas = document.getElementById("mainCanvas");
-  console.log(canvas);
   screenManager = new TextModeScreen(100, 35, canvas, sourceFont);
 
   const resizeObserver = new ResizeObserver(([canvasEntry]) => {
@@ -79,6 +93,37 @@ function init() {
   startTime = Date.now();
   // Call our main loop at 25fps
   setInterval(mainLoop, 1000 / 25);
+
+  const secondsFromStart = (secs) => startTime + secs * 1000;
+  const waves = [
+    [23, 16, secondsFromStart(5)],
+    [34, 16, secondsFromStart(7)],
+    [48, 21, secondsFromStart(8.45)],
+    [60, 22, secondsFromStart(9.5)],
+    [74, 17, secondsFromStart(10.75)],
+  ];
+  for (const [charX, charY, time] of waves) {
+    startNewEffect(charX, charY, time - 2.25 * 1000);
+  }
+
+  canvas.addEventListener("click", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const canvasX = (e.clientX - rect.left) * scaleX;
+    const canvasY = (e.clientY - rect.top) * scaleY;
+
+    // Convert canvas coordinates to character grid coordinates
+    const charX = Math.floor(
+      canvasX / (canvas.width / screenManager.charsWide),
+    );
+    const charY = Math.floor(
+      canvasY / (canvas.height / screenManager.charsHigh),
+    );
+
+    startNewEffect(charX, charY);
+  });
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -317,14 +362,31 @@ function mainLoop() {
       startRow + row,
       char,
       setWhite ? 0x0f : displayedLongAgo ? prevColor : randomBrightColor(),
+      // 0x0f,
     );
   }
 
   scrollDownSign(
     screenManager,
-    Math.floor((timeInSecondsSinceStart - 3.1) * 70, 0),
+    Math.floor((timeInSecondsSinceStart - 3.1 - 6.25) * 70, 0),
   );
 
+  activeEffects = activeEffects.filter((effect) => {
+    const isComplete = createSpreadingEffect(
+      screenManager,
+      effect.x,
+      effect.y,
+      effect.maxDistance,
+      () => randomBrightColor(), // Or any other color function
+      effect.startTime,
+      effect.speed,
+      effect.fadeTime,
+      effect.originalColor,
+    );
+
+    // Remove completed effects
+    return !isComplete;
+  });
   // Render the textmode screen to our canvas
   screenManager.presentToScreen();
 }
