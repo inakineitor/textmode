@@ -112,7 +112,7 @@ function clamp(num, min, max) {
   return Math.min(Math.max(num, min), max);
 }
 
-function scrollDownSign(screenManager) {
+function scrollDownSign(screenManager, numChars) {
   const instructionText = "Scroll down to learn more";
 
   const startRow = Math.floor((screenManager.charsHigh / 6) * 5);
@@ -120,14 +120,103 @@ function scrollDownSign(screenManager) {
     (screenManager.charsWide - instructionText.length) / 2,
   );
 
-  screenManager.printBox(
-    startCol - 2,
-    startRow - 1,
-    instructionText.length + 4,
-    3,
-    0x0f,
-  );
-  screenManager.print(startCol, startRow, instructionText, 0x0f);
+  const coordinates = [];
+
+  const x = startCol - 2;
+  const y = startRow - 1;
+  const width = instructionText.length + 4;
+  const height = 3;
+  const color = 0x0f;
+
+  const topLeft = String.fromCharCode(201);
+  const top = String.fromCharCode(205);
+  const topRight = String.fromCharCode(187);
+  const left = String.fromCharCode(186);
+  const right = String.fromCharCode(186);
+  const bottomLeft = String.fromCharCode(200);
+  const bottom = String.fromCharCode(205);
+  const bottomRight = String.fromCharCode(188);
+
+  // Top edge
+  for (let i = 0; i < width; i++) {
+    coordinates.push([x + i, y, " "]);
+  }
+
+  // Right edge
+  for (let i = 1; i < height - 1; i++) {
+    coordinates.push([x + width - 1, y + i, " "]);
+  }
+
+  // Bottom edge
+  for (let i = width - 1; i >= 0; i--) {
+    coordinates.push([x + i, y + height - 1, " "]);
+  }
+
+  // Left edge
+  for (let i = height - 2; i > 0; i--) {
+    coordinates.push([x, y + i, " "]);
+  }
+
+  // Fill inner space
+  for (let j = y + 1; j < y + height - 1; j++) {
+    for (let i = 1; i < width - 1; i++) {
+      coordinates.push([x + i, j, " "]);
+    }
+  }
+
+  //***************************************
+
+  // Top edge
+  for (let i = 0; i < width; i++) {
+    coordinates.push([
+      x + i,
+      y,
+      i === 0 ? topLeft : i === width - 1 ? topRight : top,
+    ]);
+  }
+
+  // Right edge
+  for (let i = 1; i < height - 1; i++) {
+    coordinates.push([x + width - 1, y + i, right]);
+  }
+
+  // Bottom edge
+  for (let i = width - 1; i >= 0; i--) {
+    coordinates.push([
+      x + i,
+      y + height - 1,
+      i === 0 ? bottomLeft : i === width - 1 ? bottomRight : bottom,
+    ]);
+  }
+
+  // Left edge
+  for (let i = height - 2; i > 0; i--) {
+    coordinates.push([x, y + i, left]);
+  }
+
+  // Fill inner space
+  for (let j = y + 1; j < y + height - 1; j++) {
+    for (let i = 1; i < width - 1; i++) {
+      coordinates.push([x + i, j, " "]);
+    }
+  }
+
+  // Fill inner space
+  for (let j = y + 1; j < y + height - 1; j++) {
+    for (let i = 1; i < width - 1; i++) {
+      coordinates.push([x + i, j, " "]);
+    }
+  }
+
+  // Add instruction text
+  for (let i = 0; i < instructionText.length; i++) {
+    coordinates.push([startCol + i, startRow, instructionText[i]]);
+  }
+
+  for (let i = 0; i < Math.min(numChars, coordinates.length); i++) {
+    const [x, y, char] = coordinates[i];
+    screenManager.print(x, y, char, color);
+  }
 }
 
 function randomBrightColor() {
@@ -224,7 +313,10 @@ function mainLoop() {
     );
   }
 
-  scrollDownSign(screenManager);
+  scrollDownSign(
+    screenManager,
+    Math.floor((timeInSecondsSinceStart - 3.1) * 70, 0),
+  );
 
   // Render the textmode screen to our canvas
   screenManager.presentToScreen();
