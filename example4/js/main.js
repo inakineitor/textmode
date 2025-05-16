@@ -103,7 +103,7 @@ function init() {
     [74, 17, secondsFromStart(10.75)],
   ];
   for (const [charX, charY, time] of waves) {
-    startNewEffect(charX, charY, time - 2.25 * 1000);
+    startNewEffect(charX - 16 + 16, charY - 11 + 8, time - 2.25 * 1000);
   }
 
   canvas.addEventListener("click", (e) => {
@@ -326,8 +326,9 @@ function mainLoop() {
   );
 
   // Calculate the startRow and startCol such that the name is centered on the grid
-  const startRow = Math.floor((screenManager.charsHigh - nameHeight) / 2);
+  const startRow = Math.floor((screenManager.charsHigh - nameHeight) * (3 / 8));
   const startCol = Math.floor((screenManager.charsWide - nameWidth) / 2);
+  console.log(startRow, startCol);
 
   for (let i = 0; i < mergedName.length; i++) {
     if (!revealedMask[i]) continue;
