@@ -18,8 +18,9 @@ const NAME_ART = `    .....     .    ,68b.   ,                     ..         .
      "*8Nu.z*"                  ^Y"   ^Y'     ""    ""      ""   `;
 
 const CONFIG = {
-    CANVAS_WIDTH_CHARS: 100,
-    CANVAS_HEIGHT_CHARS: 35,
+    CANVAS_WIDTH_CHARS: 100, // Will be dynamically overwritten
+    CANVAS_HEIGHT_CHARS: 35, // Will be dynamically overwritten
+    TARGET_CHAR_PIXEL_HEIGHT: 20,
     FPS: 25,
     NAME_ART,
     RANDOM_SEED: 360,
@@ -40,13 +41,13 @@ const CONFIG = {
         ANIM_TOTAL_DELAY_SEC: 6.25, // Additional delay for full scroll sign effect start
         ANIM_REVEAL_SPEED_FACTOR: 70,
         BORDER_CHARS: {
-            TOP_LEFT: 201,
-            TOP: 205,
-            TOP_RIGHT: 187,
-            LEFT: 186,
-            RIGHT: 186,
-            BOTTOM_LEFT: 200,
-            BOTTOM: 205,
+            TOP_LEFT: 201,    
+            TOP: 205,         
+            TOP_RIGHT: 187,   
+            LEFT: 186,        
+            RIGHT: 186,       
+            BOTTOM_LEFT: 200, 
+            BOTTOM: 205,      
             BOTTOM_RIGHT: 188,
         },
         FLASH_EFFECT_THRESHOLD_END: 15,    // Chars from end of reveal
@@ -68,6 +69,65 @@ const CONFIG = {
 
 function clamp(num, min, max) {
     return Math.min(Math.max(num, min), max);
+}
+
+function calculateScreenDimensions(canvasEl) {
+    // Synchronize canvas buffer dimensions with its CSS dimensions.
+    // This ensures that 1 CSS pixel = 1 canvas pixel, for crisp rendering.
+    const displayWidth = canvasEl.clientWidth;
+    const displayHeight = canvasEl.clientHeight;
+
+    if (canvasEl.width !== displayWidth || canvasEl.height !== displayHeight) {
+        canvasEl.width = displayWidth;
+        canvasEl.height = displayHeight;
+    }
+
+    // Now, use canvasEl.width and canvasEl.height as the authoritative pixel dimensions
+    const currentCanvasWidth = canvasEl.width;
+    const currentCanvasHeight = canvasEl.height;
+
+    // Calculate the number of rows based on the target character pixel height.
+    // Ensure at least 1 row.
+    let numRows = Math.max(1, Math.floor(currentCanvasHeight / CONFIG.TARGET_CHAR_PIXEL_HEIGHT));
+    
+    // Calculate the actual pixel height of each character cell to fill the canvas height evenly.
+    // Ensure actualCharHeight is non-negative.
+    const actualCharHeight = numRows > 0 ? currentCanvasHeight / numRows : 0;
+
+    // The line `canvasEl.style.fontSize` has been removed as it's generally not relevant
+    // for direct canvas bitmap rendering of characters from a font atlas.
+
+    let charWidth;
+    if (sourceFont && sourceFont.complete && sourceFont.naturalWidth > 0 && sourceFont.naturalHeight > 0) {
+        const FONT_ATLAS_COLS = 16; 
+        const FONT_ATLAS_ROWS = 16; 
+        const charNativeWidthInAtlas = sourceFont.naturalWidth / FONT_ATLAS_COLS;
+        const charNativeHeightInAtlas = sourceFont.naturalHeight / FONT_ATLAS_ROWS;
+        
+        if (charNativeHeightInAtlas > 0) {
+            const charAspectRatio = charNativeWidthInAtlas / charNativeHeightInAtlas;
+            charWidth = actualCharHeight * charAspectRatio;
+        } else {
+            console.warn("Font atlas character native height is zero. Using fallback for charWidth.");
+            charWidth = actualCharHeight * 0.5; // Fallback aspect ratio
+        }
+    } else {
+        console.warn("sourceFont not ready or has invalid dimensions. Using fallback for charWidth in calculateScreenDimensions.");
+        charWidth = actualCharHeight * 0.5; // Fallback aspect ratio
+    }
+
+    // Calculate the number of columns based on the character width.
+    // Ensure at least 1 column, and use a fallback if charWidth is not positive.
+    let numCols;
+    if (charWidth > 0) {
+        numCols = Math.max(1, Math.floor(currentCanvasWidth / charWidth));
+    } else {
+        // This can happen if actualCharHeight is 0 (e.g., canvas height is 0).
+        console.warn("Calculated charWidth is not positive. Using fallback for numCols.");
+        numCols = 10; // Original fallback value
+    }
+
+    return { numRows, numCols, actualCharHeight, charWidth };
 }
 
 /**
@@ -456,7 +516,14 @@ function init() {
     sourceFont.src = "font.png"; // Assuming font.png is in the same directory or accessible
 
     sourceFont.onload = () => {
-        screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS, canvas, sourceFont);
+        const { numRows, numCols } = calculateScreenDimensions(canvas);
+        // container.style.fontSize is set inside calculateScreenDimensions
+
+        CONFIG.CANVAS_WIDTH_CHARS = numCols;
+        CONFIG.CANVAS_HEIGHT_CHARS = numRows;
+
+        screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS, canvas, sourceFont); // Corrected typo from CANAS_HEIGHT_CHARS
+        
         nameAnimator = new NameAnimator(screenManager, CONFIG.NAME_ART, CONFIG);
         scrollSign = new ScrollSign(screenManager, CONFIG);
         effectsManager = new EffectsManager(screenManager, CONFIG);
@@ -469,19 +536,32 @@ function init() {
         resizeObserver.observe(canvas);
 
         startTime = Date.now();
-        setInterval(mainLoop, 1000 / CONFIG.FPS);
+
+        const nameArtActualHeight = nameAnimator.nameHeight; 
+        const nameArtPaddedWidth = nameAnimator.nameWidth;   
+
+        const nameDisplayBoxStartRow = Math.floor((screenManager.charsHigh - nameArtActualHeight) * CONFIG.NAME_ANIM.START_ROW_FACTOR);
+        const nameDisplayBoxStartCol = Math.floor((screenManager.charsWide - nameArtPaddedWidth) / 2);
+
+        const nameContentAbsoluteStartCol = nameDisplayBoxStartCol + 1; 
+        const nameContentAbsoluteStartRow = nameDisplayBoxStartRow + 1;
 
         const secondsFromStart = (secs) => startTime + secs * 1000;
+        
         const initialWaves = [
-            [23, 16, secondsFromStart(5)],
-            [34, 16, secondsFromStart(7)],
-            [48, 21, secondsFromStart(8.45)],
-            [60, 22, secondsFromStart(9.5)],
-            [74, 17, secondsFromStart(10.75)],
+            [6, 4, secondsFromStart(5)],
+            [17, 4, secondsFromStart(7)],
+            [31, 9, secondsFromStart(8.45)],
+            [43, 10, secondsFromStart(9.5)],
+            [57, 5, secondsFromStart(10.75)],
         ];
 
-        for (const [charX, charY, time] of initialWaves) {
-            effectsManager.startNewEffect(charX - 16 + 16, charY - 11 + 8, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
+        for (const [relX, relY, time] of initialWaves) {
+            const absX = nameContentAbsoluteStartCol + relX;
+            const absY = nameContentAbsoluteStartRow + relY;
+            const clampedAbsX = clamp(absX, 0, screenManager.charsWide - 1);
+            const clampedAbsY = clamp(absY, 0, screenManager.charsHigh - 1);
+            effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
         }
 
         canvas.addEventListener("click", (e) => {
@@ -497,8 +577,9 @@ function init() {
             effectsManager.startNewEffect(charX, charY);
         });
 
-        mainLoop(); // Run first loop immediately
+        requestAnimationFrame(mainLoop); 
     };
+
     sourceFont.onerror = () => {
         console.error("Failed to load font.png");
     };
@@ -520,7 +601,7 @@ function mainLoop() {
     // Fill the screen with random background
     for (let i = 0; i < screenManager.charsWide * screenManager.charsHigh; i++) {
         screenManager.charBuffer[i] = getRandomCharFromName();
-        screenManager.colourBuffer[i] = 0x00; // Dark background
+        screenManager.colourBuffer[i] = 0x00; // Light gray background characters
     }
 
     const timeInSecondsSinceStart = (Date.now() - startTime) / 1000;
@@ -530,6 +611,7 @@ function mainLoop() {
     effectsManager.update();
 
     screenManager.presentToScreen();
+    requestAnimationFrame(mainLoop); // Schedule the next frame
 }
 
 // Start the application
