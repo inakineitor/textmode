@@ -633,7 +633,3 @@ function mainLoop() {
 
 // Start the application
 window.onload = init;
-
-// Ensure TextModeScreen is defined (e.g., included via a <script> tag in HTML)
-// For example:
-// class TextModeScreen { constructor(w,h,c,f){ this.charsWide=w; this.charsHigh=h; this.charBuffer=new Uint8Array(w*h); this.colourBuffer=new Uint8Array(w*h); /*...*/ } print(x,y,char,col) {/*...*/} presentToScreen(){/*...*/} } 
