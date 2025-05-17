@@ -21,6 +21,7 @@ const CONFIG = {
     CANVAS_WIDTH_CHARS: 100,
     CANVAS_HEIGHT_CHARS: 35,
     FPS: 25,
+    RENDERER_TYPE: "webgpu", // Changed from "2d" to "webgpu"
     NAME_ART,
     RANDOM_SEED: 360,
     NAME_ANIM: {
@@ -450,13 +451,35 @@ let effectsManager;
 let startTime;
 let sourceFont;
 
-function init() {
+async function init() {
     const canvas = document.getElementById("mainCanvas");
     sourceFont = new Image();
     sourceFont.src = "font.png"; // Assuming font.png is in the same directory or accessible
 
-    sourceFont.onload = () => {
-        screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS, canvas, sourceFont);
+    sourceFont.onload = async () => {
+        screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS);
+        try {
+            await screenManager.init(canvas, sourceFont, CONFIG.RENDERER_TYPE);
+        } catch (error) {
+            console.error("Error initializing ScreenManager:", error);
+            // Fallback or error display logic here
+            // For example, try to initialize with 2D renderer if WebGPU failed
+            if (CONFIG.RENDERER_TYPE === "webgpu") {
+                console.warn("WebGPU initialization failed, trying 2D renderer as fallback...");
+                try {
+                    await screenManager.init(canvas, sourceFont, "2d");
+                    CONFIG.RENDERER_TYPE = "2d"; // Update config to reflect the change
+                } catch (fallbackError) {
+                    console.error("2D renderer fallback also failed:", fallbackError);
+                    alert("Failed to initialize rendering. Please check console.");
+                    return;
+                }
+            } else {
+                alert("Failed to initialize 2D renderer. Please check console.");
+                return;
+            }
+        }
+
         nameAnimator = new NameAnimator(screenManager, CONFIG.NAME_ART, CONFIG);
         scrollSign = new ScrollSign(screenManager, CONFIG);
         effectsManager = new EffectsManager(screenManager, CONFIG);
@@ -509,7 +532,7 @@ function init() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 function mainLoop() {
-    if (!screenManager) return; // Guard against running before init completes
+    if (!screenManager || !screenManager.renderer) return; // Guard against running before init completes fully
 
     // It's important to get a fresh copy if modules might modify these buffers directly
     // However, if they only use screenManager.print(), this might not be strictly necessary
