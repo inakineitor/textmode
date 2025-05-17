@@ -115,24 +115,6 @@ function generateRandomMask(length, revealedNum, seed) {
     return mask;
 }
 
-// Placeholder for createSpreadingEffect as it's not defined in the original file
-// This function would ideally be defined elsewhere or provided.
-// function createSpreadingEffect(screenManager, x, y, maxDistance, colorFunc, startTime, speed, fadeTime, originalColor) {
-//     // console.warn("createSpreadingEffect is a placeholder.");
-//     // This function should return true when the effect is complete, false otherwise.
-//     // For demonstration, let's assume effects last for a short duration.
-//     const DUMMY_EFFECT_DURATION_MS = 1000; // 1 second
-//     if (Date.now() - startTime > DUMMY_EFFECT_DURATION_MS) {
-//         return true; // Effect complete
-//     }
-//     // Simulate some visual change
-//     if (screenManager && x >=0 && x < screenManager.charsWide && y >=0 && y < screenManager.charsHigh) {
-//         // screenManager.print(x, y, 'X', colorFunc());
-//     }
-//     return false; // Effect ongoing
-// }
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Name Animator Class
 ///////////////////////////////////////////////////////////////////////////////////////////////////
