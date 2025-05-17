@@ -20,6 +20,7 @@ const NAME_ART = `    .....     .    ,68b.   ,                     ..         .
 const CONFIG = {
     CANVAS_WIDTH_CHARS: 100,
     CANVAS_HEIGHT_CHARS: 35,
+    TARGET_CHAR_PIXEL_HEIGHT: 20,
     FPS: 25,
     NAME_ART,
     RANDOM_SEED: 360,
@@ -68,6 +69,38 @@ const CONFIG = {
 
 function clamp(num, min, max) {
     return Math.min(Math.max(num, min), max);
+}
+
+function getCharSize(container) {
+    // Ensure styles are applied for measurement. fontSize must be set on container first.
+    const M_span = document.createElement('span');
+    const computedStyle = window.getComputedStyle(container);
+    
+    M_span.style.fontFamily = computedStyle.fontFamily;
+    M_span.style.fontSize = computedStyle.fontSize; // Crucial: this is after JS sets it
+    M_span.style.lineHeight = computedStyle.lineHeight; // Should be '1'
+    M_span.style.whiteSpace = "pre"; // Ensure single char width is measured
+    M_span.style.letterSpacing = computedStyle.letterSpacing; // Should be '0'
+
+    M_span.style.visibility = "hidden";
+    M_span.style.position = "absolute"; // So it doesn't disrupt layout
+    M_span.textContent = 'M'; // A common character for width measurement
+    
+    document.body.appendChild(M_span); 
+    const charWidth = M_span.offsetWidth;
+    const charHeight = M_span.offsetHeight;
+    document.body.removeChild(M_span);
+
+    if (charWidth === 0 || charHeight === 0) {
+        console.warn("Character size measurement returned zero. Using fallback.");
+        const fontSizePx = parseFloat(computedStyle.fontSize);
+        // Fallback based on an assumed character aspect ratio (e.g. 0.5 to 0.6) if measurement fails
+        if (fontSizePx > 0) {
+            return { width: fontSizePx * 0.6, height: fontSizePx }; // Approximate aspect ratio
+        }
+        return { width: 8, height: 16 }; // Absolute fallback
+    }
+    return { width: charWidth, height: charHeight };
 }
 
 /**
@@ -208,6 +241,11 @@ class ScrollSign {
         this.config = config.SCROLL_SIGN;
         this.instructionText = this.config.TEXT;
         this._generateCoordinates();
+    }
+
+    recalculateLayout() {
+        this._generateCoordinates();
+        // Add any necessary animation state resets here if required
     }
 
     _generateCoordinates() {
@@ -449,6 +487,27 @@ let scrollSign;
 let effectsManager;
 let startTime;
 
+function calculateScreenDimensions(container) {
+    const containerHeight = container.clientHeight;
+    const containerWidth = container.clientWidth;
+
+    let numRows = Math.max(1, Math.floor(containerHeight / CONFIG.TARGET_CHAR_PIXEL_HEIGHT));
+    const actualCharHeight = containerHeight / numRows; // Characters will perfectly fill height
+
+    // Temporarily set font size on container for measurement
+    const originalFontSize = container.style.fontSize;
+    container.style.fontSize = actualCharHeight + 'px';
+    
+    const { width: charWidth } = getCharSize(container);
+    
+    // Restore original font size if needed, or leave as is if it's meant to be permanent
+    // For this flow, it's meant to be permanent for this render cycle.
+
+    let numCols = charWidth > 0 ? Math.max(1, Math.floor(containerWidth / charWidth)) : 10; // Ensure charWidth is positive
+
+    return { numRows, numCols, actualCharHeight, charWidth };
+}
+
 function init() {
     const textContainer = document.getElementById("textContainer");
     if (!textContainer) {
@@ -456,6 +515,12 @@ function init() {
         alert("Initialization failed: textContainer not found.");
         return;
     }
+
+    const { numRows, numCols, actualCharHeight } = calculateScreenDimensions(textContainer);
+    textContainer.style.fontSize = actualCharHeight + 'px'; // Apply calculated font size
+
+    CONFIG.CANVAS_WIDTH_CHARS = numCols;
+    CONFIG.CANVAS_HEIGHT_CHARS = numRows;
 
     screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS, "textContainer");
     if (!screenManager.container) {
@@ -468,25 +533,65 @@ function init() {
     effectsManager = new EffectsManager(screenManager, CONFIG);
 
     const resizeObserver = new ResizeObserver(([containerEntry]) => {
-        const { contentRect: { width, height } } = containerEntry;
+        const { width: newContainerWidth, height: newContainerHeight } = containerEntry.contentRect;
+
+        if (newContainerWidth === 0 || newContainerHeight === 0) {
+            console.log("Container has zero dimension, skipping resize.");
+            return;
+        }
+        
+        const { numRows: newNumRows, numCols: newNumCols, actualCharHeight: newActualCharHeight } = calculateScreenDimensions(textContainer);
+        textContainer.style.fontSize = newActualCharHeight + 'px';
+
+
+        if (newNumCols !== screenManager.charsWide || newNumRows !== screenManager.charsHigh) {
+            CONFIG.CANVAS_WIDTH_CHARS = newNumCols;
+            CONFIG.CANVAS_HEIGHT_CHARS = newNumRows;
+            screenManager.resize(newNumCols, newNumRows);
+            if (scrollSign) {
+                scrollSign.recalculateLayout();
+            }
+            // nameAnimator should adapt automatically as it reads screenManager.charsWide/High in its update.
+            // effectsManager active effects might visually shift; clearing them could be an option:
+            // if (effectsManager) effectsManager.activeEffects = [];
+        }
         // console.log(width, height, "Text container resized");
     });
     resizeObserver.observe(textContainer);
 
     startTime = Date.now();
-    // setInterval(mainLoop, 1000 / CONFIG.FPS); // Remove setInterval
+
+    // Calculate the dynamic starting position of the actual name art content
+    const nameArtActualHeight = nameAnimator.nameHeight; // Number of lines in NAME_ART
+    const nameArtPaddedWidth = nameAnimator.nameWidth;   // Width of ' ' + NAME_ART_line + ' '
+
+    // This is the top-left of the bounding box where NameAnimator draws its mergedName
+    const nameDisplayBoxStartRow = Math.floor((screenManager.charsHigh - nameArtActualHeight) * CONFIG.NAME_ANIM.START_ROW_FACTOR);
+    const nameDisplayBoxStartCol = Math.floor((screenManager.charsWide - nameArtPaddedWidth) / 2);
+
+    // The actual content of NAME_ART (e.g., its first character) starts at an offset (1,1) 
+    // within this display box due to mergedName's structure (blank top row, and space padding in each line of nameInRows)
+    const nameContentAbsoluteStartCol = nameDisplayBoxStartCol + 1; 
+    const nameContentAbsoluteStartRow = nameDisplayBoxStartRow + 1;
 
     const secondsFromStart = (secs) => startTime + secs * 1000;
+    
+    // Initial wave coordinates are now relative to the top-left of the NAME_ART content
     const initialWaves = [
-        [23, 16, secondsFromStart(5)],
-        [34, 16, secondsFromStart(7)],
-        [48, 21, secondsFromStart(8.45)],
-        [60, 22, secondsFromStart(9.5)],
-        [74, 17, secondsFromStart(10.75)],
+        [6, 4, secondsFromStart(5)],
+        [17, 4, secondsFromStart(7)],
+        [31, 9, secondsFromStart(8.45)],
+        [43, 10, secondsFromStart(9.5)],
+        [57, 5, secondsFromStart(10.75)],
     ];
 
-    for (const [charX, charY, time] of initialWaves) {
-        effectsManager.startNewEffect(charX - 16 + 16, charY - 11 + 8, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
+    for (const [relX, relY, time] of initialWaves) {
+        const absX = nameContentAbsoluteStartCol + relX;
+        const absY = nameContentAbsoluteStartRow + relY;
+        // Ensure the effect starts within the valid screen boundaries, though ideally relX/Y are within name art
+        const clampedAbsX = clamp(absX, 0, screenManager.charsWide - 1);
+        const clampedAbsY = clamp(absY, 0, screenManager.charsHigh - 1);
+        effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
     }
 
     textContainer.addEventListener("click", (e) => {

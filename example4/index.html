@@ -20,9 +20,9 @@
         image-rendering: crisp-edges;
 
         /* --- Adjustments for cell filling --- */
-        /* CONFIG.CANVAS_HEIGHT_CHARS is 35, CONFIG.CANVAS_WIDTH_CHARS is 100 from main.js */
-        /* Set font-size based on cell height. (100/35 = approx 2.857) */
-        font-size: calc(100svh / 35);
+        /* Font size is now dynamically set in js/main.js to make N rows fit container height. */
+        /* Character width is measured in JS to determine number of columns. */
+        /* font-size: calc(100svh / 35); -- This is now handled by JS */
         line-height: 1; /* Remove extra vertical spacing within the line/cell */
         letter-spacing: 0; /* Ensure no extra space between characters if multiple were in a span */
         
@@ -43,7 +43,7 @@
     </style>
   </head>
   <body onload="init();" style="margin: 0; width: 100svw; height: 100svh">
-    <div id="textContainer" style="width: 100svw; height: 100svh; /* styles moved to <style> block */"></div>
+    <div id="textContainer" style="width: 100svw; height: 100svh; /* font-size is set in JS */"></div>
     <!-- Use the technique above to show the scroll down button in the Astro page: https://stackoverflow.com/questions/30855985/pure-css-animation-visibility-with-delay  -->
   </body>
 </html> 
