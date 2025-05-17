@@ -94,10 +94,8 @@ function calculateScreenDimensions(canvasEl) {
     // Ensure actualCharHeight is non-negative.
     const actualCharHeight = numRows > 0 ? currentCanvasHeight / numRows : 0;
 
-    // The line `canvasEl.style.fontSize` has been removed as it's generally not relevant
-    // for direct canvas bitmap rendering of characters from a font atlas.
-
-    let charWidth;
+    // Calculate character aspect ratio from font atlas
+    let charAspectRatio = 0.5; // Default fallback aspect ratio
     if (sourceFont && sourceFont.complete && sourceFont.naturalWidth > 0 && sourceFont.naturalHeight > 0) {
         const FONT_ATLAS_COLS = 16; 
         const FONT_ATLAS_ROWS = 16; 
@@ -105,29 +103,65 @@ function calculateScreenDimensions(canvasEl) {
         const charNativeHeightInAtlas = sourceFont.naturalHeight / FONT_ATLAS_ROWS;
         
         if (charNativeHeightInAtlas > 0) {
-            const charAspectRatio = charNativeWidthInAtlas / charNativeHeightInAtlas;
-            charWidth = actualCharHeight * charAspectRatio;
+            charAspectRatio = charNativeWidthInAtlas / charNativeHeightInAtlas;
         } else {
-            console.warn("Font atlas character native height is zero. Using fallback for charWidth.");
-            charWidth = actualCharHeight * 0.5; // Fallback aspect ratio
+            console.warn("Font atlas character native height is zero. Using fallback for charAspectRatio.");
+            // charAspectRatio remains 0.5
         }
     } else {
-        console.warn("sourceFont not ready or has invalid dimensions. Using fallback for charWidth in calculateScreenDimensions.");
-        charWidth = actualCharHeight * 0.5; // Fallback aspect ratio
+        console.warn("sourceFont not ready or has invalid dimensions. Using fallback for charAspectRatio in calculateScreenDimensions.");
+        // charAspectRatio remains 0.5
     }
 
-    // Calculate the number of columns based on the character width.
-    // Ensure at least 1 column, and use a fallback if charWidth is not positive.
+    // Calculate the ideal character width if aspect ratio were perfectly preserved based on actualCharHeight
+    const idealCharWidth = actualCharHeight * charAspectRatio;
+
+    // Determine minimum number of columns required to fit content
+    const nameArtLines = CONFIG.NAME_ART.split('\n');
+    const maxNameArtContentLength = nameArtLines.reduce((maxLen, line) => Math.max(maxLen, line.length), 0);
+    // NameAnimator adds 1 space padding on each side of each line string it processes,
+    // so the effective width needed is max content length + 2.
+    const nameArtEffectiveWidth = maxNameArtContentLength + 2; 
+    const scrollSignEffectiveWidth = CONFIG.SCROLL_SIGN.TEXT.length + CONFIG.SCROLL_SIGN.BOX_WIDTH_PADDING;
+    const minContentRequiredCols = Math.max(1, nameArtEffectiveWidth, scrollSignEffectiveWidth);
+
     let numCols;
-    if (charWidth > 0) {
-        numCols = Math.max(1, Math.floor(currentCanvasWidth / charWidth));
+    // Calculate number of columns
+    // It must be at least minContentRequiredCols.
+    // If possible, it should also accommodate currentCanvasWidth with idealCharWidth.
+    if (idealCharWidth > 0 && currentCanvasWidth > 0) {
+        const numColsBasedOnIdealWidthAndCanvas = Math.max(1, Math.floor(currentCanvasWidth / idealCharWidth));
+        numCols = Math.max(minContentRequiredCols, numColsBasedOnIdealWidthAndCanvas);
     } else {
-        // This can happen if actualCharHeight is 0 (e.g., canvas height is 0).
-        console.warn("Calculated charWidth is not positive. Using fallback for numCols.");
-        numCols = 10; // Original fallback value
+        // Fallback if idealCharWidth is not positive (e.g., actualCharHeight is 0)
+        // or if currentCanvasWidth is 0.
+        // In such cases, numColsBasedOnIdealWidthAndCanvas is not meaningful or calculable.
+        // Prioritize minContentRequiredCols, with a system fallback if needed.
+        numCols = Math.max(minContentRequiredCols, 10); // 10 was an original fallback for numCols in some scenarios
+        if (idealCharWidth <= 0) {
+             console.warn("Calculated idealCharWidth is not positive. numCols might not preserve ideal aspect ratio.");
+        }
+        if (currentCanvasWidth <= 0) {
+            console.warn("currentCanvasWidth is not positive. numCols calculation is primarily based on content requirements.");
+        }
     }
+    
+    // Calculate final character width based on chosen numCols and currentCanvasWidth.
+    // This width will be used for rendering and ensures all columns fit.
+    // Aspect ratio might be altered if numCols was dictated by minContentRequiredCols
+    // and (currentCanvasWidth / numCols) differs significantly from idealCharWidth.
+    const finalCharWidth = (numCols > 0 && currentCanvasWidth > 0) ? currentCanvasWidth / numCols : 0;
+    
+    if (finalCharWidth <= 0 && currentCanvasWidth > 0 && numCols > 0) {
+        // This condition implies an issue if finalCharWidth is zero despite positive canvas width and columns.
+        // It could happen if currentCanvasWidth is positive but extremely small relative to numCols.
+        console.warn("Calculated finalCharWidth is zero or negative despite positive canvas width and columns. This might lead to rendering issues.", {currentCanvasWidth, numCols, finalCharWidth});
+    }
+    
+    // The line `canvasEl.style.fontSize` has been removed as it's generally not relevant
+    // for direct canvas bitmap rendering of characters from a font atlas.
 
-    return { numRows, numCols, actualCharHeight, charWidth };
+    return { numRows, numCols, actualCharHeight, charWidth: finalCharWidth };
 }
 
 /**
