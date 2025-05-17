@@ -40,14 +40,14 @@ const CONFIG = {
         ANIM_TOTAL_DELAY_SEC: 6.25, // Additional delay for full scroll sign effect start
         ANIM_REVEAL_SPEED_FACTOR: 70,
         BORDER_CHARS: {
-            TOP_LEFT: 201,
-            TOP: 205,
-            TOP_RIGHT: 187,
-            LEFT: 186,
-            RIGHT: 186,
-            BOTTOM_LEFT: 200,
-            BOTTOM: 205,
-            BOTTOM_RIGHT: 188,
+            TOP_LEFT: 201,     // CP437 for ╔ (double line)
+            TOP: 205,          // CP437 for ═ (double line)
+            TOP_RIGHT: 187,    // CP437 for ╗ (double line)
+            LEFT: 186,         // CP437 for ║ (double line)
+            RIGHT: 186,        // CP437 for ║ (double line)
+            BOTTOM_LEFT: 200,  // CP437 for ╚ (double line)
+            BOTTOM: 205,       // CP437 for ═ (double line)
+            BOTTOM_RIGHT: 188, // CP437 for ╝ (double line)
         },
         FLASH_EFFECT_THRESHOLD_END: 15,    // Chars from end of reveal
         PAUSE_FACTOR: 2, // Factor of text length for pause steps

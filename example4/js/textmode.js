@@ -152,15 +152,15 @@ class TextModeScreen {
    * @param {number} color - Color
    */
   printBox(x, y, width, height, color) {
-    const topLeft = 201;
-    const top = 205;
-    const topRight = 187;
-    const left = 186;
-    const right = 186;
-    const bottomLeft = 200;
-    const bottom = 205;
-    const bottomRight = 188;
-    const space = 32;
+    const topLeft = 201;    // CP437 for ╔ (double line)
+    const top = 205;        // CP437 for ═ (double line)
+    const topRight = 187;   // CP437 for ╗ (double line)
+    const left = 186;       // CP437 for ║ (double line)
+    const right = 186;      // CP437 for ║ (double line)
+    const bottomLeft = 200; // CP437 for ╚ (double line)
+    const bottom = 205;     // CP437 for ═ (double line)
+    const bottomRight = 188;// CP437 for ╝ (double line)
+    const space = 32; // Space character code
 
     const startX = Math.max(0, x);
     const startY = Math.max(0, y);

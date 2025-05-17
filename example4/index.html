@@ -3,9 +3,47 @@
     <script type="text/javascript" src="js/textmode.js"></script>
     <script type="text/javascript" src="js/ripple.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
+    <style>
+      @font-face {
+        font-family: 'FourThreeSeven';
+        src: url('fonts/FourThreeSevenMedium.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+      }
+      #textContainer {
+        font-family: 'FourThreeSeven', monospace;
+        white-space: pre;
+        font-smooth: never;
+        -webkit-font-smoothing: none;
+        -moz-osx-font-smoothing: grayscale;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+
+        /* --- Adjustments for cell filling --- */
+        /* CONFIG.CANVAS_HEIGHT_CHARS is 35, CONFIG.CANVAS_WIDTH_CHARS is 100 from main.js */
+        /* Set font-size based on cell height. (100/35 = approx 2.857) */
+        font-size: calc(100svh / 35);
+        line-height: 1; /* Remove extra vertical spacing within the line/cell */
+        letter-spacing: 0; /* Ensure no extra space between characters if multiple were in a span */
+        
+        /* The grid display is set in textmode.js on the container: */
+        /* this.container.style.display = "grid"; */
+        /* this.container.style.gridTemplateColumns = `repeat(${this.charsWide}, auto)`; */
+        /* this.container.style.gridTemplateRows = `repeat(${this.charsHigh}, auto)`; */
+        /* Child spans are display: inline-block; */
+        /* This setup should make cells adjacent by default due to the grid. */
+      }
+
+      /* Optional: Style individual cells further if needed */
+      /* #textContainer > span {
+        width: 100%; 
+        height: 100%; 
+        text-align: center; 
+      } */
+    </style>
   </head>
   <body onload="init();" style="margin: 0; width: 100svw; height: 100svh">
-    <div id="textContainer" style="width: 100svw; height: 100svh; font-family: monospace; white-space: pre;"></div>
+    <div id="textContainer" style="width: 100svw; height: 100svh; /* styles moved to <style> block */"></div>
     <!-- Use the technique above to show the scroll down button in the Astro page: https://stackoverflow.com/questions/30855985/pure-css-animation-visibility-with-delay  -->
   </body>
 </html> 
