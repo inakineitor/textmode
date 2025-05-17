@@ -24,79 +24,107 @@ class TextModeScreen {
     "#FFFFFF",
   ];
 
-  constructor(charsWide, charsHigh, canvas, sourceFont) {
-    if (!canvas) {
-      alert("Failed to find canvas");
-      return;
-    }
-    this.context2d = canvas.getContext("2d");
-    if (!this.context2d) {
-      alert("Couldn't get 2d context on canvas");
+  constructor(charsWide, charsHigh, containerId) {
+    this.container = document.getElementById(containerId);
+    if (!this.container) {
+      alert("Failed to find container element: " + containerId);
       return;
     }
 
-    // Setup canvas size and buffers
-    canvas.width = charsWide * CHARACTER_WIDTH;
-    canvas.height = charsHigh * CHARACTER_HEIGHT;
     this.charsWide = charsWide;
     this.charsHigh = charsHigh;
-    this.charBuffer = new Uint8Array(charsWide * charsHigh);
-    this.colourBuffer = new Uint8Array(charsWide * charsHigh);
+    const bufferSize = charsWide * charsHigh;
+    this.charBuffer = new Uint8Array(bufferSize);
+    this.colourBuffer = new Uint8Array(bufferSize);
 
-    // Create foreground font colours
-    this.coloredFonts = new Array(this.#COLOR_TABLE.length);
-    for (let i = 0; i < this.coloredFonts.length; i++) {
-      this.coloredFonts[i] = document.createElement("canvas");
-      this.coloredFonts[i].width = sourceFont.width;
-      this.coloredFonts[i].height = sourceFont.height;
-      const bufferContext = this.coloredFonts[i].getContext("2d");
-      bufferContext.fillStyle = this.#COLOR_TABLE[i];
-      bufferContext.fillRect(0, 0, sourceFont.width, sourceFont.height);
-      bufferContext.globalCompositeOperation = "destination-atop";
-      bufferContext.drawImage(sourceFont, 0, 0);
+    // Buffers to store the state of the previous frame for optimization
+    this.prevCharBuffer = new Uint8Array(bufferSize);
+    this.prevColourBuffer = new Uint8Array(bufferSize);
+    // Initialize with a value that will force initial render, e.g., -1 if your char/color codes are non-negative
+    // Or, more simply, ensure they are different from the initial charBuffer/colourBuffer state if it's all zeros/spaces.
+    // For Uint8Array, they default to 0. If charBuffer[0] could be 0 (e.g. space or null char),
+    // and colourBuffer[0] could be 0 (e.g. black on black), we need a different strategy for the first frame.
+    // A simple way is to fill them with a value that is unlikely to be the initial state, or use a 'firstRender' flag.
+    // Let's fill prevColourBuffer with a value that will ensure the first frame updates all colors.
+    // charCode 0 (null) is often rendered as space or nothing, so a diff check is usually fine.
+    this.prevColourBuffer.fill(255); // Fill with an invalid color index to force initial color set.
+    // prevCharBuffer defaults to 0s, charBuffer also defaults to 0s (which we treat as space)
+    // So, if initial screen is all spaces, textContent won't update unless explicitly set.
+    // Let's ensure first paint of characters if charBuffer is not all 0s.
+    // The initial charBuffer is all 0s. presentToScreen treats 0 as space. So this should be fine.
+
+
+    // Initialize the text container
+    this.container.style.display = "grid";
+    this.container.style.gridTemplateColumns = `repeat(${this.charsWide}, auto)`;
+    this.container.style.gridTemplateRows = `repeat(${this.charsHigh}, auto)`;
+    
+    this.textCells = [];
+    this.container.innerHTML = ''; // Clear existing content
+
+    const fragment = document.createDocumentFragment(); // Create a DocumentFragment
+
+    for (let i = 0; i < bufferSize; i++) {
+        const cell = document.createElement("span");
+        cell.textContent = " "; 
+        cell.style.display = "inline-block";
+        cell.style.backgroundColor = this.#COLOR_TABLE[0]; 
+        cell.style.color = this.#COLOR_TABLE[15]; 
+        fragment.appendChild(cell); // Append cell to fragment
+        this.textCells.push(cell);
     }
+    this.container.appendChild(fragment); // Append fragment to container once
   }
 
   /**
-   * Render buffers to the HTML canvas
+   * Render buffers to the HTML. Only update changed cells.
    * */
   presentToScreen() {
-    for (
-      let readPosition = 0;
-      readPosition < this.charsWide * this.charsHigh;
-      readPosition++
-    ) {
-      const x = readPosition % this.charsWide;
-      const y = Math.floor(readPosition / this.charsWide);
+    for (let i = 0; i < this.textCells.length; i++) {
+      const charId = this.charBuffer[i];
+      const colorId = this.colourBuffer[i];
+      const prevCharId = this.prevCharBuffer[i];
+      const prevColorId = this.prevColourBuffer[i];
+      const cell = this.textCells[i];
 
-      const startY = y * CHARACTER_HEIGHT;
-      const startX = x * CHARACTER_WIDTH;
+      const isTargetVisible = (colorId !== 0); // colorId 0 means black foreground & black background
+      const wasPreviouslyVisible = (prevColorId !== 0);
 
-      const charId = this.charBuffer[readPosition];
-      const colorId = this.colourBuffer[readPosition];
-
-      const characterSpriteX = (charId & 0x0f) * CHARACTER_WIDTH;
-      const characterSpriteY = (charId >> 4) * CHARACTER_HEIGHT;
-
-      this.context2d.fillStyle = this.#COLOR_TABLE[colorId >> 4];
-      this.context2d.fillRect(
-        startX,
-        startY,
-        CHARACTER_WIDTH,
-        CHARACTER_HEIGHT,
-      );
-      this.context2d.drawImage(
-        this.coloredFonts[colorId & 15],
-        characterSpriteX,
-        characterSpriteY,
-        CHARACTER_WIDTH,
-        CHARACTER_HEIGHT,
-        startX,
-        startY,
-        CHARACTER_WIDTH,
-        CHARACTER_HEIGHT,
-      );
+      if (isTargetVisible) {
+        // Cell is intended to be visible.
+        // Update character if it changed OR if it was previously invisible (to show correct char).
+        if (charId !== prevCharId || !wasPreviouslyVisible) {
+          let character = String.fromCharCode(charId);
+          // Ensure null characters (charId 0) are rendered as spaces when visible.
+          if (charId === 0) { 
+            character = " "; 
+          }
+          cell.textContent = character;
+        }
+        
+        // Update colors if they changed OR if it was previously invisible.
+        if (colorId !== prevColorId || !wasPreviouslyVisible) {
+          cell.style.backgroundColor = this.#COLOR_TABLE[colorId >> 4];
+          cell.style.color = this.#COLOR_TABLE[colorId & 0x0F];
+        }
+      } else {
+        // Cell is intended to be invisible (black-on-black).
+        // Only update the DOM if it was previously visible to make it invisible.
+        if (wasPreviouslyVisible) {
+          cell.style.backgroundColor = this.#COLOR_TABLE[0]; // Black
+          cell.style.color = this.#COLOR_TABLE[0];          // Black
+          // Set textContent to a space for consistency when becoming invisible.
+          if (cell.textContent !== " ") { 
+            cell.textContent = " "; 
+          }
+        }
+        // If target is invisible AND was already invisible, do nothing.
+      }
     }
+
+    // After rendering, save the current state as the previous state for the next frame
+    this.prevCharBuffer.set(this.charBuffer);
+    this.prevColourBuffer.set(this.colourBuffer);
   }
 
   /**
@@ -106,9 +134,10 @@ class TextModeScreen {
     if (y < 0 || y >= this.charsHigh) return;
 
     for (let i = 0; i < text.length; i++) {
-      if (x + i < 0 || this.charsWide <= x + i) continue;
+      const currentX = x + i;
+      if (currentX < 0 || this.charsWide <= currentX) continue;
 
-      const writePosition = x + y * this.charsWide + i;
+      const writePosition = currentX + y * this.charsWide;
       this.charBuffer[writePosition] = text.charCodeAt(i);
       this.colourBuffer[writePosition] = color;
     }
@@ -123,68 +152,70 @@ class TextModeScreen {
    * @param {number} color - Color
    */
   printBox(x, y, width, height, color) {
-    const topLeft = String.fromCharCode(201);
-    const top = String.fromCharCode(205);
-    const topRight = String.fromCharCode(187);
-    const left = String.fromCharCode(186);
-    const right = String.fromCharCode(186);
-    const bottomLeft = String.fromCharCode(200);
-    const bottom = String.fromCharCode(205);
-    const bottomRight = String.fromCharCode(188);
+    const topLeft = 201;
+    const top = 205;
+    const topRight = 187;
+    const left = 186;
+    const right = 186;
+    const bottomLeft = 200;
+    const bottom = 205;
+    const bottomRight = 188;
+    const space = 32;
 
-    const innerWidth = width - 2;
-    this.print(
-      x,
-      y,
-      `${topLeft}${Array(innerWidth + 1).join(top)}${topRight}`,
-      color,
-    );
-    for (let j = y + 1; j < y + height - 1; j++) {
-      this.print(
-        x,
-        j,
-        `${left}${Array(innerWidth + 1).join(" ")}${right}`,
-        color,
-      );
+    const startX = Math.max(0, x);
+    const startY = Math.max(0, y);
+    const endX = Math.min(this.charsWide, x + width);
+    const endY = Math.min(this.charsHigh, y + height);
+
+    for (let curY = startY; curY < endY; curY++) {
+        for (let curX = startX; curX < endX; curX++) {
+            const writePos = curX + curY * this.charsWide;
+            let charToPrint = space;
+
+            if (curX === x && curY === y) charToPrint = topLeft;
+            else if (curX === (x + width - 1) && curY === y) charToPrint = topRight;
+            else if (curX === x && curY === (y + height - 1)) charToPrint = bottomLeft;
+            else if (curX === (x + width - 1) && curY === (y + height - 1)) charToPrint = bottomRight;
+            else if (curY === y || curY === (y + height - 1)) charToPrint = top;
+            else if (curX === x || curX === (x + width - 1)) charToPrint = left;
+
+            const isOnBorder = (curX === x || curX === (x + width - 1) || curY === y || curY === (y + height - 1));
+            
+            if (curY >= y && curY < (y+height) && curX >=x && curX < (x+width)) {
+                if (isOnBorder) {
+                    this.charBuffer[writePos] = charToPrint;
+                } else {
+                    this.charBuffer[writePos] = space;
+                }
+                this.colourBuffer[writePos] = color;
+            }
+        }
     }
-    this.print(
-      x,
-      y + height - 1,
-      `${bottomLeft}${Array(innerWidth + 1).join(bottom)}${bottomRight}`,
-      color,
-    );
   }
 
   /**
    * Process a group of characters with a user defined function
    */
   processBox(x, y, w, h, func) {
-    for (let sy = y; sy < y + h; sy++) {
-      if (sy < 0 || this.charsHigh < sy) continue;
+    const startY = Math.max(0, y);
+    const endY = Math.min(this.charsHigh, y + h);
+    const startX = Math.max(0, x);
+    const endX = Math.min(this.charsWide, x + w);
 
-      for (let i = 0; i < w; i++) {
-        const sx = x + i;
-        const readWritePos = x + sy * this.charsWide + i;
-
-        if (sx < 0 || this.charsWide < sx) continue;
-
-        const charId = this.charBuffer[readWritePos];
-        const colorId = this.colourBuffer[readWritePos];
-        const results = func(charId, colorId);
-        this.charBuffer[readWritePos] = results[0];
-        this.colourBuffer[readWritePos] = results[1];
+    for (let curY = startY; curY < endY; curY++) {
+      for (let curX = startX; curX < endX; curX++) {
+        if (curX >= x && curX < (x + w) && curY >= y && curY < (y + h)) {
+            const readWritePos = curX + curY * this.charsWide;
+            
+            const charId = this.charBuffer[readWritePos];
+            const colorId = this.colourBuffer[readWritePos];
+            const results = func(charId, colorId);
+            if (results && results.length === 2) {
+                this.charBuffer[readWritePos] = results[0];
+                this.colourBuffer[readWritePos] = results[1];
+            }
+        }
       }
-
-      // let readWritePos = x + sy * this.charsWide;
-      // for (let sx = x; sx < x + w; sx++, readWritePos++) {
-      //   if (sx < 0 || this.charsWide < sx) continue;
-      //
-      //   const charId = this.charBuffer[readWritePos];
-      //   const colorId = this.colourBuffer[readWritePos];
-      //   const results = func(charId, colorId);
-      //   this.charBuffer[readWritePos] = results[0];
-      //   this.colourBuffer[readWritePos] = results[1];
-      // }
     }
   }
 }

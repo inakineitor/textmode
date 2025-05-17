@@ -448,88 +448,103 @@ let nameAnimator;
 let scrollSign;
 let effectsManager;
 let startTime;
-let sourceFont;
 
 function init() {
-    const canvas = document.getElementById("mainCanvas");
-    sourceFont = new Image();
-    sourceFont.src = "font.png"; // Assuming font.png is in the same directory or accessible
+    const textContainer = document.getElementById("textContainer");
+    if (!textContainer) {
+        console.error("Failed to find textContainer element for TextModeScreen.");
+        alert("Initialization failed: textContainer not found.");
+        return;
+    }
 
-    sourceFont.onload = () => {
-        screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS, canvas, sourceFont);
-        nameAnimator = new NameAnimator(screenManager, CONFIG.NAME_ART, CONFIG);
-        scrollSign = new ScrollSign(screenManager, CONFIG);
-        effectsManager = new EffectsManager(screenManager, CONFIG);
+    screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS, "textContainer");
+    if (!screenManager.container) {
+        console.error("ScreenManager failed to initialize its container.");
+        return;
+    }
+    
+    nameAnimator = new NameAnimator(screenManager, CONFIG.NAME_ART, CONFIG);
+    scrollSign = new ScrollSign(screenManager, CONFIG);
+    effectsManager = new EffectsManager(screenManager, CONFIG);
 
-        const resizeObserver = new ResizeObserver(([canvasEntry]) => {
-            const { contentRect: { width, height } } = canvasEntry;
-            // console.log(width, height, "Canvas resized");
-            // Add logic here if screenManager needs to be re-initialized or adjusted on resize
-        });
-        resizeObserver.observe(canvas);
+    const resizeObserver = new ResizeObserver(([containerEntry]) => {
+        const { contentRect: { width, height } } = containerEntry;
+        // console.log(width, height, "Text container resized");
+    });
+    resizeObserver.observe(textContainer);
 
-        startTime = Date.now();
-        setInterval(mainLoop, 1000 / CONFIG.FPS);
+    startTime = Date.now();
+    // setInterval(mainLoop, 1000 / CONFIG.FPS); // Remove setInterval
 
-        const secondsFromStart = (secs) => startTime + secs * 1000;
-        const initialWaves = [
-            [23, 16, secondsFromStart(5)],
-            [34, 16, secondsFromStart(7)],
-            [48, 21, secondsFromStart(8.45)],
-            [60, 22, secondsFromStart(9.5)],
-            [74, 17, secondsFromStart(10.75)],
-        ];
+    const secondsFromStart = (secs) => startTime + secs * 1000;
+    const initialWaves = [
+        [23, 16, secondsFromStart(5)],
+        [34, 16, secondsFromStart(7)],
+        [48, 21, secondsFromStart(8.45)],
+        [60, 22, secondsFromStart(9.5)],
+        [74, 17, secondsFromStart(10.75)],
+    ];
 
-        for (const [charX, charY, time] of initialWaves) {
-            effectsManager.startNewEffect(charX - 16 + 16, charY - 11 + 8, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
+    for (const [charX, charY, time] of initialWaves) {
+        effectsManager.startNewEffect(charX - 16 + 16, charY - 11 + 8, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
+    }
+
+    textContainer.addEventListener("click", (e) => {
+        if (!screenManager || !screenManager.container) return;
+
+        const rect = textContainer.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const clickY = e.clientY - rect.top;
+        const cellWidth = textContainer.clientWidth / screenManager.charsWide;
+        const cellHeight = textContainer.clientHeight / screenManager.charsHigh;
+
+        if (cellWidth > 0 && cellHeight > 0) {
+            const charX = Math.floor(clickX / cellWidth);
+            const charY = Math.floor(clickY / cellHeight);
+            const clampedX = clamp(charX, 0, screenManager.charsWide - 1);
+            const clampedY = clamp(charY, 0, screenManager.charsHigh - 1);
+            effectsManager.startNewEffect(clampedX, clampedY);
         }
+    });
 
-        canvas.addEventListener("click", (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-
-            const canvasX = (e.clientX - rect.left) * scaleX;
-            const canvasY = (e.clientY - rect.top) * scaleY;
-
-            const charX = Math.floor(canvasX / (canvas.width / screenManager.charsWide));
-            const charY = Math.floor(canvasY / (canvas.height / screenManager.charsHigh));
-            effectsManager.startNewEffect(charX, charY);
-        });
-
-        mainLoop(); // Run first loop immediately
-    };
-    sourceFont.onerror = () => {
-        console.error("Failed to load font.png");
-    };
+    // mainLoop(); // Initial call is handled by requestAnimationFrame
+    requestAnimationFrame(mainLoop); // Start the animation loop
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Main Loop
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-function mainLoop() {
-    if (!screenManager) return; // Guard against running before init completes
+// let lastFrameTime = 0; // For FPS control with requestAnimationFrame, if needed
+// const desiredInterval = 1000 / CONFIG.FPS;
 
-    // It's important to get a fresh copy if modules might modify these buffers directly
-    // However, if they only use screenManager.print(), this might not be strictly necessary
-    // depending on TextModeScreen's internal workings. For safety, let's keep it.
+function mainLoop(currentTime) { // currentTime is provided by requestAnimationFrame
+    if (!screenManager) return; 
+
+    // Optional: FPS throttling if requestAnimationFrame runs too fast for your CONFIG.FPS
+    // if (currentTime - lastFrameTime < desiredInterval) {
+    //     requestAnimationFrame(mainLoop);
+    //     return;
+    // }
+    // lastFrameTime = currentTime;
+
     const previousCharBuffer = new Uint8Array(screenManager.charBuffer);
     const previousColorBuffer = new Uint8Array(screenManager.colourBuffer);
 
-    // Fill the screen with random background
     for (let i = 0; i < screenManager.charsWide * screenManager.charsHigh; i++) {
         screenManager.charBuffer[i] = getRandomCharFromName();
-        screenManager.colourBuffer[i] = 0x00; // Dark background
+        screenManager.colourBuffer[i] = 0x00; 
     }
 
-    const timeInSecondsSinceStart = (Date.now() - startTime) / 1000;
+    const timeInSecondsSinceStart = (Date.now() - startTime) / 1000; // Or use (currentTime - startTime) / 1000 if startTime is from performance.now()
 
     nameAnimator.update(timeInSecondsSinceStart, previousColorBuffer);
     scrollSign.update(timeInSecondsSinceStart);
     effectsManager.update();
 
     screenManager.presentToScreen();
+
+    requestAnimationFrame(mainLoop); // Continue the loop
 }
 
 // Start the application
