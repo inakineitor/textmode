@@ -94,24 +94,7 @@ function calculateScreenDimensions(canvasEl) {
     // Ensure actualCharHeight is non-negative.
     const actualCharHeight = numRows > 0 ? currentCanvasHeight / numRows : 0;
 
-    // Calculate character aspect ratio from font atlas
-    let charAspectRatio = 0.5; // Default fallback aspect ratio
-    if (sourceFont && sourceFont.complete && sourceFont.naturalWidth > 0 && sourceFont.naturalHeight > 0) {
-        const FONT_ATLAS_COLS = 16; 
-        const FONT_ATLAS_ROWS = 16; 
-        const charNativeWidthInAtlas = sourceFont.naturalWidth / FONT_ATLAS_COLS;
-        const charNativeHeightInAtlas = sourceFont.naturalHeight / FONT_ATLAS_ROWS;
-        
-        if (charNativeHeightInAtlas > 0) {
-            charAspectRatio = charNativeWidthInAtlas / charNativeHeightInAtlas;
-        } else {
-            console.warn("Font atlas character native height is zero. Using fallback for charAspectRatio.");
-            // charAspectRatio remains 0.5
-        }
-    } else {
-        console.warn("sourceFont not ready or has invalid dimensions. Using fallback for charAspectRatio in calculateScreenDimensions.");
-        // charAspectRatio remains 0.5
-    }
+    const charAspectRatio = 16 / 24;
 
     // Calculate the ideal character width if aspect ratio were perfectly preserved based on actualCharHeight
     const idealCharWidth = actualCharHeight * charAspectRatio;
