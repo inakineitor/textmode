@@ -41,13 +41,13 @@ const CONFIG = {
         ANIM_TOTAL_DELAY_SEC: 6.25, // Additional delay for full scroll sign effect start
         ANIM_REVEAL_SPEED_FACTOR: 70,
         BORDER_CHARS: {
-            TOP_LEFT: 201,    
-            TOP: 205,         
-            TOP_RIGHT: 187,   
-            LEFT: 186,        
-            RIGHT: 186,       
-            BOTTOM_LEFT: 200, 
-            BOTTOM: 205,      
+            TOP_LEFT: 201,
+            TOP: 205,
+            TOP_RIGHT: 187,
+            LEFT: 186,
+            RIGHT: 186,
+            BOTTOM_LEFT: 200,
+            BOTTOM: 205,
             BOTTOM_RIGHT: 188,
         },
         FLASH_EFFECT_THRESHOLD_END: 15,    // Chars from end of reveal
@@ -89,7 +89,7 @@ function calculateScreenDimensions(canvasEl) {
     // Calculate the number of rows based on the target character pixel height.
     // Ensure at least 1 row.
     let numRows = Math.max(1, Math.floor(currentCanvasHeight / CONFIG.TARGET_CHAR_PIXEL_HEIGHT));
-    
+
     // Calculate the actual pixel height of each character cell to fill the canvas height evenly.
     // Ensure actualCharHeight is non-negative.
     const actualCharHeight = numRows > 0 ? currentCanvasHeight / numRows : 0;
@@ -104,7 +104,7 @@ function calculateScreenDimensions(canvasEl) {
     const maxNameArtContentLength = nameArtLines.reduce((maxLen, line) => Math.max(maxLen, line.length), 0);
     // NameAnimator adds 1 space padding on each side of each line string it processes,
     // so the effective width needed is max content length + 2.
-    const nameArtEffectiveWidth = maxNameArtContentLength + 2; 
+    const nameArtEffectiveWidth = maxNameArtContentLength + 2;
     const scrollSignEffectiveWidth = CONFIG.SCROLL_SIGN.TEXT.length + CONFIG.SCROLL_SIGN.BOX_WIDTH_PADDING;
     const minContentRequiredCols = Math.max(1, nameArtEffectiveWidth, scrollSignEffectiveWidth);
 
@@ -122,25 +122,25 @@ function calculateScreenDimensions(canvasEl) {
         // Prioritize minContentRequiredCols, with a system fallback if needed.
         numCols = Math.max(minContentRequiredCols, 10); // 10 was an original fallback for numCols in some scenarios
         if (idealCharWidth <= 0) {
-             console.warn("Calculated idealCharWidth is not positive. numCols might not preserve ideal aspect ratio.");
+            console.warn("Calculated idealCharWidth is not positive. numCols might not preserve ideal aspect ratio.");
         }
         if (currentCanvasWidth <= 0) {
             console.warn("currentCanvasWidth is not positive. numCols calculation is primarily based on content requirements.");
         }
     }
-    
+
     // Calculate final character width based on chosen numCols and currentCanvasWidth.
     // This width will be used for rendering and ensures all columns fit.
     // Aspect ratio might be altered if numCols was dictated by minContentRequiredCols
     // and (currentCanvasWidth / numCols) differs significantly from idealCharWidth.
     const finalCharWidth = (numCols > 0 && currentCanvasWidth > 0) ? currentCanvasWidth / numCols : 0;
-    
+
     if (finalCharWidth <= 0 && currentCanvasWidth > 0 && numCols > 0) {
         // This condition implies an issue if finalCharWidth is zero despite positive canvas width and columns.
         // It could happen if currentCanvasWidth is positive but extremely small relative to numCols.
-        console.warn("Calculated finalCharWidth is zero or negative despite positive canvas width and columns. This might lead to rendering issues.", {currentCanvasWidth, numCols, finalCharWidth});
+        console.warn("Calculated finalCharWidth is zero or negative despite positive canvas width and columns. This might lead to rendering issues.", { currentCanvasWidth, numCols, finalCharWidth });
     }
-    
+
     // The line `canvasEl.style.fontSize` has been removed as it's generally not relevant
     // for direct canvas bitmap rendering of characters from a font atlas.
 
@@ -148,15 +148,38 @@ function calculateScreenDimensions(canvasEl) {
 }
 
 /**
- * Returns a random character from the NAME string, excluding whitespace
- * @returns {number} ASCII code of a random character from NAME_ART
+ * Provides random characters (as ASCII codes) from a given source string,
+ * excluding whitespace. Unique characters are pre-calculated for O(1) retrieval.
  */
-function getRandomCharFromName() {
-    const charactersArray = CONFIG.NAME_ART.replace(/\\s/g, "").split("");
-    const uniqueCharactersArray = [...new Set(charactersArray)];
-    if (uniqueCharactersArray.length === 0) return 0; // Default char (e.g., space)
-    const randomChar = uniqueCharactersArray[Math.floor(Math.random() * uniqueCharactersArray.length)];
-    return randomChar.charCodeAt(0);
+class RandomCharProvider {
+    /**
+     * @param {string} sourceString The string to source characters from.
+     *                              Typically, this would be CONFIG.NAME_ART.
+     */
+    constructor(sourceString) {
+        // Remove all whitespace characters (spaces, newlines, tabs, etc.),
+        // then split the remaining string into an array of characters.
+        const charactersArray = sourceString.replace(/\s/g, "").split("");
+        // Store only unique characters from this array.
+        this.uniqueCharactersArray = [...new Set(charactersArray)];
+    }
+
+    /**
+     * Returns the ASCII code of a random character from the unique set derived
+     * from the source string during construction.
+     * This operation is O(1) after the initial setup.
+     * @returns {number} ASCII code of a random character. Returns 0 if the source string
+     *                   contained no non-whitespace characters.
+     */
+    getRandomCharAscii() {
+        if (this.uniqueCharactersArray.length === 0) {
+            return 0; // Default value (e.g., for space or null char) if no valid characters are available
+        }
+        // Select a random character from the pre-calculated unique set.
+        const randomIndex = Math.floor(Math.random() * this.uniqueCharactersArray.length);
+        const randomChar = this.uniqueCharactersArray[randomIndex];
+        return randomChar.charCodeAt(0);
+    }
 }
 
 function randomBrightColor() {
@@ -222,10 +245,10 @@ class NameAnimator {
 
         const numberOfCharsRevealed = clamp(baseRevealCount, 0, this.mergedName.length);
         const revealedMask = generateRandomMask(this.mergedName.length, numberOfCharsRevealed, this.randomSeed);
-        
+
         const laggedRevealCount = clamp(baseRevealCount - LAG_FRAMES_1, 0, this.mergedName.length);
         const laggedRevealedMask = generateRandomMask(this.mergedName.length, laggedRevealCount, this.randomSeed);
-        
+
         const veryLaggedRevealCount = clamp(baseRevealCount - LAG_FRAMES_2, 0, this.mergedName.length);
         const veryLaggedRevealedMask = generateRandomMask(this.mergedName.length, veryLaggedRevealCount, this.randomSeed);
 
@@ -248,10 +271,10 @@ class NameAnimator {
                 let hasNonSpaceNeighbor = false;
                 for (const adjIdx of adjacentIndices) {
                     if (adjIdx >= 0 && adjIdx < this.mergedName.length) {
-                         // Check if the character at mergedName[adjIdx] is part of the original name rows, not the padding
+                        // Check if the character at mergedName[adjIdx] is part of the original name rows, not the padding
                         const adjRow = Math.floor(adjIdx / this.nameWidth);
                         if (adjRow > 0 && adjRow <= this.nameHeight) { // Only consider neighbors within the actual name rows (excluding top/bottom padding)
-                           if (this.mergedName[adjIdx] !== " ") {
+                            if (this.mergedName[adjIdx] !== " ") {
                                 hasNonSpaceNeighbor = true;
                                 break;
                             }
@@ -308,7 +331,7 @@ class ScrollSign {
                 this.coordinates.push([boxX + c, boxY + r, " "]);
             }
         }
-        
+
         // Draw border
         // Top edge
         for (let i = 0; i < boxWidth; i++) {
@@ -365,7 +388,7 @@ class ScrollSign {
         for (let i = 0; i < this.instructionText.length; i++) {
             finalCharsMap.set(key(startColText + i, startRowText), this.instructionText[i]);
         }
-        
+
         // Convert map to coordinates array, ordered for animation (e.g. clear, border, text)
         // The animation sequence logic in `update` will determine what to show when.
         // For simplicity, `this.coordinates` will store the sequence of drawing operations
@@ -505,7 +528,9 @@ class EffectsManager {
                 effect.x,
                 effect.y,
                 effect.maxDistance,
-                () => randomBrightColor(), // Or a more specific color function from config
+                (distance, wavePosition) => {
+                    return randomBrightColor();
+                },
                 effect.startTime,
                 effect.speed,
                 effect.fadeTime,
@@ -526,6 +551,7 @@ let scrollSign;
 let effectsManager;
 let startTime;
 let sourceFont;
+let randomCharProvider;
 
 function init() {
     const canvas = document.getElementById("mainCanvas");
@@ -540,7 +566,9 @@ function init() {
         CONFIG.CANVAS_HEIGHT_CHARS = numRows;
 
         screenManager = new TextModeScreen(CONFIG.CANVAS_WIDTH_CHARS, CONFIG.CANVAS_HEIGHT_CHARS, canvas, sourceFont); // Corrected typo from CANAS_HEIGHT_CHARS
-        
+
+        randomCharProvider = new RandomCharProvider(CONFIG.NAME_ART);
+
         nameAnimator = new NameAnimator(screenManager, CONFIG.NAME_ART, CONFIG);
         scrollSign = new ScrollSign(screenManager, CONFIG);
         effectsManager = new EffectsManager(screenManager, CONFIG);
@@ -554,17 +582,17 @@ function init() {
 
         startTime = Date.now();
 
-        const nameArtActualHeight = nameAnimator.nameHeight; 
-        const nameArtPaddedWidth = nameAnimator.nameWidth;   
+        const nameArtActualHeight = nameAnimator.nameHeight;
+        const nameArtPaddedWidth = nameAnimator.nameWidth;
 
         const nameDisplayBoxStartRow = Math.floor((screenManager.charsHigh - nameArtActualHeight) * CONFIG.NAME_ANIM.START_ROW_FACTOR);
         const nameDisplayBoxStartCol = Math.floor((screenManager.charsWide - nameArtPaddedWidth) / 2);
 
-        const nameContentAbsoluteStartCol = nameDisplayBoxStartCol + 1; 
+        const nameContentAbsoluteStartCol = nameDisplayBoxStartCol + 1;
         const nameContentAbsoluteStartRow = nameDisplayBoxStartRow + 1;
 
         const secondsFromStart = (secs) => startTime + secs * 1000;
-        
+
         const initialWaves = [
             [6, 4, secondsFromStart(5)],
             [17, 4, secondsFromStart(7)],
@@ -578,7 +606,7 @@ function init() {
             const absY = nameContentAbsoluteStartRow + relY;
             const clampedAbsX = clamp(absX, 0, screenManager.charsWide - 1);
             const clampedAbsY = clamp(absY, 0, screenManager.charsHigh - 1);
-            effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
+            effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000, { SPEED_CELLS_PER_SEC: 15 });
         }
 
         canvas.addEventListener("click", (e) => {
@@ -594,7 +622,7 @@ function init() {
             effectsManager.startNewEffect(charX, charY);
         });
 
-        requestAnimationFrame(mainLoop); 
+        requestAnimationFrame(mainLoop);
     };
 
     sourceFont.onerror = () => {
@@ -617,7 +645,7 @@ function mainLoop() {
 
     // Fill the screen with random background
     for (let i = 0; i < screenManager.charsWide * screenManager.charsHigh; i++) {
-        screenManager.charBuffer[i] = getRandomCharFromName();
+        screenManager.charBuffer[i] = randomCharProvider.getRandomCharAscii();
         screenManager.colourBuffer[i] = 0x00; // Light gray background characters
     }
 
