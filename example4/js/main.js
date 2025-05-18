@@ -183,7 +183,7 @@ class RandomCharProvider {
 }
 
 function randomBrightColor() {
-    return Math.floor(10 + Math.random() * 5);
+    return Math.floor(10 + Math.random() * 4);
 }
 
 /**
@@ -606,7 +606,7 @@ function init() {
             const absY = nameContentAbsoluteStartRow + relY;
             const clampedAbsX = clamp(absX, 0, screenManager.charsWide - 1);
             const clampedAbsY = clamp(absY, 0, screenManager.charsHigh - 1);
-            effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000, { SPEED_CELLS_PER_SEC: 15 });
+            effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
         }
 
         canvas.addEventListener("click", (e) => {
