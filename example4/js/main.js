@@ -59,7 +59,7 @@ const CONFIG = {
         SPEED_CELLS_PER_SEC: 10,
         FADE_TIME_SEC: 0.6,
         ORIGINAL_COLOR: 0x0f, // white
-        COLOR_HOLD_MS: 45, // New: Default duration to hold a wave color
+        COLOR_HOLD_MS: 30, // New: Default duration to hold a wave color
     },
     INITIAL_WAVES_DELAY_SEC: 2.25,
 };
@@ -515,16 +515,13 @@ class EffectsManager {
         this.activeEffects.push({
             x,
             y,
-            startTime, // Effect's visual animation start time
+            startTime, 
             maxDistance: effectConfig.MAX_DISTANCE,
             speed: effectConfig.SPEED_CELLS_PER_SEC,
             fadeTime: effectConfig.FADE_TIME_SEC,
-            originalColor: effectConfig.ORIGINAL_COLOR, // Base color, used by createSpreadingEffect
-            colorHoldMs: effectConfig.COLOR_HOLD_MS,   // Duration to hold color, now per cell
-
-            // Map to store color states for individual cells within this effect
-            // Key: generated from distance/wavePosition, Value: { color, lastChangeTime }
-            cellColorStates: new Map()
+            originalColor: effectConfig.ORIGINAL_COLOR,
+            colorHoldMs: effectConfig.COLOR_HOLD_MS,   
+            cellColorStates: new Map() // Owned by EffectsManager, passed to ripple.js
         });
     }
 
@@ -535,34 +532,15 @@ class EffectsManager {
                 effect.x,
                 effect.y,
                 effect.maxDistance,
-                (distance, wavePosition, cellKey) => {
-
-                    let cellState = effect.cellColorStates.get(cellKey);
-                    const currentTime = Date.now();
-
-                    if (!cellState) { // If this cell is new to the effect or its state was cleared
-                        cellState = {
-                            color: randomBrightColor(),
-                            lastChangeTime: currentTime
-                        };
-                        effect.cellColorStates.set(cellKey, cellState);
-                    } else {
-                        // Check if the hold time for this specific cell has elapsed
-                        if (currentTime - cellState.lastChangeTime > effect.colorHoldMs) {
-                            cellState.color = randomBrightColor();
-                            cellState.lastChangeTime = currentTime;
-                        }
-                    }
-                    return cellState.color;
-                },
+                () => randomBrightColor(), // Pass the simple base color function
                 effect.startTime,
-                effect.speed,
-                effect.fadeTime,
-                effect.originalColor
+                effect.speed,       // Assuming speed is on effect or default in ripple.js
+                effect.fadeTime,    // Assuming fadeTime is on effect or default in ripple.js
+                effect.originalColor, // Assuming originalColor is on effect or default in ripple.js
+                effect.colorHoldMs,   // Pass the hold duration
+                effect.cellColorStates // Pass the state map for this effect
             );
-
-            // When an effect is complete, its cellColorStates map will be garbage collected along with the effect object.
-            return !isComplete; // Keep if NOT complete
+            return !isComplete; 
         });
     }
 }

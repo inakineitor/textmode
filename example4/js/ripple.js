@@ -7,11 +7,13 @@
  * @param {number} startX - The starting X coordinate
  * @param {number} startY - The starting Y coordinate
  * @param {number} maxSpreadDistance - Maximum distance the effect will spread
- * @param {Function} colorFunction - Function that returns a color based on distance and wave position
+ * @param {Function} baseColorFn - Function that returns a color based on distance and wave position
  * @param {number} startTime - Time when the effect started (milliseconds)
  * @param {number} speed - Speed of the spreading wave (cells per second)
  * @param {number} fadeTime - Time it takes for a cell to fade back to original color (seconds)
  * @param {number} originalColor - The color to fade back to (default 0x0F for white)
+ * @param {number} colorHoldMs - Time to hold color for a cell
+ * @param {Map} cellColorStatesMap - Map to store { color, lastChangeTime } for cells
  * @returns {boolean} - Whether the effect is complete
  */
 function createSpreadingEffect(
@@ -19,11 +21,13 @@ function createSpreadingEffect(
   startX,
   startY,
   maxSpreadDistance,
-  colorFunction,
+  baseColorFn,
   startTime,
   speed = 15,
   fadeTime = 1.5,
   originalColor = 0x0f,
+  colorHoldMs,
+  cellColorStatesMap
 ) {
   // Ensure coordinates are within bounds
   if (
@@ -90,19 +94,25 @@ function createSpreadingEffect(
 
       // Determine if the cell is within the current wave front
       if (distance <= currentWaveFront && timeSinceWavePassed <= fadeTime) {
-        let color;
+        const currentTime = Date.now();
+        let cellState = cellColorStatesMap.get(key);
+
+        if (!cellState || (currentTime - cellState.lastChangeTime > colorHoldMs)) {
+            const newColor = baseColorFn();
+            cellState = { color: newColor, lastChangeTime: currentTime };
+            cellColorStatesMap.set(key, cellState);
+        }
+        
+        const currentColorForCell = cellState.color;
+        let finalColorToDraw;
 
         // If the wave just reached this cell (within the waveFrontDistance), apply wave front color
         if (timeSinceWavePassed < waveFrontDistance) {
-          // Apply color based on position within the wave front
-          const wavePosition =
-            1.0 - (currentWaveFront - distance) / waveFrontDistance;
-          color = colorFunction(distance, wavePosition, key);
+          finalColorToDraw = currentColorForCell; 
         }
         // Otherwise, calculate fade between wave color and original color
         else {
-          // Get the wave front color (using position 1.0 for the peak of the wave)
-          const waveColor = colorFunction(distance, 1.0, key);
+          const waveColor = currentColorForCell; // The color determined by hold logic is the wave's peak color for this cell
 
           // Calculate fade progress (0 = wave color, 1 = original color)
           const fadeProgress = Math.min(
@@ -116,14 +126,14 @@ function createSpreadingEffect(
           if (fadeProgress < 1.0) {
             // For simplicity, we'll just fade between the wave color and original color
             // A more advanced version might interpolate RGB values
-            color = waveColor;
+            finalColorToDraw = waveColor;
           } else {
-            color = originalColor;
+            finalColorToDraw = originalColor;
           }
         }
 
         // Apply the calculated color
-        screenManager.colourBuffer[charIndex] = color;
+        screenManager.colourBuffer[charIndex] = finalColorToDraw;
       }
 
       // Add all 8 adjacent cells to the queue with increased distance
