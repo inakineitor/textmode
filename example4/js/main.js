@@ -52,14 +52,15 @@ const CONFIG = {
         },
         FLASH_EFFECT_THRESHOLD_END: 15,    // Chars from end of reveal
         PAUSE_FACTOR: 2, // Factor of text length for pause steps
-        PAUSE_FLAT: 4    // Flat number of pause steps
+        PAUSE_FLAT: 4,    // Flat number of pause steps
+        FLASH_TEXT_COLOR_HOLD_MS: 40 // Duration for each flashing char to hold its color (e.g., 150ms)
     },
     EFFECT_DEFAULTS: {
         MAX_DISTANCE: 100,
         SPEED_CELLS_PER_SEC: 10,
         FADE_TIME_SEC: 0.6,
         ORIGINAL_COLOR: 0x0f, // white
-        COLOR_HOLD_MS: 30, // New: Default duration to hold a wave color
+        COLOR_HOLD_MS: 40, // New: Default duration to hold a wave color
     },
     INITIAL_WAVES_DELAY_SEC: 2.25,
 };
@@ -311,6 +312,7 @@ class ScrollSign {
         this.config = config.SCROLL_SIGN;
         this.instructionText = this.config.TEXT;
         this._generateCoordinates();
+        this.flashCharColorStates = new Map(); // To store { color, lastChangeTime } for flashing chars
     }
 
     _generateCoordinates() {
@@ -482,21 +484,39 @@ class ScrollSign {
                         // This text character should be visible. charToPrint is already correct.
                         // Apply flashing logic based on text reveal progress
                         if (textRevealProgress - FLASH_EFFECT_THRESHOLD_END < textCharIndexInSequence) {
-                            colorToUse = randomBrightColor();
+                            const currentTime = Date.now();
+                            let charState = this.flashCharColorStates.get(textCharIndexInSequence);
+
+                            if (!charState || (currentTime - charState.lastChangeTime > this.config.FLASH_TEXT_COLOR_HOLD_MS)) {
+                                const newColor = randomBrightColor();
+                                charState = { color: newColor, lastChangeTime: currentTime };
+                                this.flashCharColorStates.set(textCharIndexInSequence, charState);
+                            }
+                            colorToUse = charState.color;
                         }
                     } else {
                         // This text char not yet revealed due to textRevealProgress, print a space.
                         // (Its slot is active because i < totalDrawnSignElements)
+                        // Also, if a character is no longer in the flashing window, its state can be cleared from the map
+                        if (this.flashCharColorStates.has(textCharIndexInSequence)) {
+                            this.flashCharColorStates.delete(textCharIndexInSequence);
+                        }
                         charToPrint = ' ';
                     }
                 } else {
                     // Pause is active for text, or text sequence not even nominally reached.
                     // Since i < totalDrawnSignElements, this slot is "active". Print a space.
+                    // Clear any potentially stale flash states if the whole text part is paused/not reached.
+                    // This might be too aggressive if we want states to persist through short pauses.
+                    // For now, let's only clear when a char is definitely *not* flashing or *not* revealed.
                     charToPrint = ' ';
                 }
             }
             this.screenManager.print(x, y, charToPrint, colorToUse);
         }
+        // Optimization: Clean up states for characters that are no longer part of the *potential* flash window at all
+        // This is a bit more complex to determine precisely without iterating all possible textCharIndexInSequence values.
+        // The current cleanup (when a char is not revealed or not flashing) is a good start.
     }
 }
 
