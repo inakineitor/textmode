@@ -59,6 +59,7 @@ const CONFIG = {
         SPEED_CELLS_PER_SEC: 10,
         FADE_TIME_SEC: 0.6,
         ORIGINAL_COLOR: 0x0f, // white
+        COLOR_HOLD_MS: 45, // New: Default duration to hold a wave color
     },
     INITIAL_WAVES_DELAY_SEC: 2.25,
 };
@@ -183,7 +184,9 @@ class RandomCharProvider {
 }
 
 function randomBrightColor() {
-    return Math.floor(10 + Math.random() * 4);
+    // Corrected palette: bright colors are 10-14 (inclusive)
+    // Base is 10, and there are 5 possibilities (10, 11, 12, 13, 14).
+    return 10 + Math.floor(Math.random() * 5);
 }
 
 /**
@@ -512,30 +515,53 @@ class EffectsManager {
         this.activeEffects.push({
             x,
             y,
-            startTime,
+            startTime, // Effect's visual animation start time
             maxDistance: effectConfig.MAX_DISTANCE,
             speed: effectConfig.SPEED_CELLS_PER_SEC,
             fadeTime: effectConfig.FADE_TIME_SEC,
-            originalColor: effectConfig.ORIGINAL_COLOR,
+            originalColor: effectConfig.ORIGINAL_COLOR, // Base color, used by createSpreadingEffect
+            colorHoldMs: effectConfig.COLOR_HOLD_MS,   // Duration to hold color, now per cell
+
+            // Map to store color states for individual cells within this effect
+            // Key: generated from distance/wavePosition, Value: { color, lastChangeTime }
+            cellColorStates: new Map()
         });
     }
 
     update() {
         this.activeEffects = this.activeEffects.filter(effect => {
-            // Now correctly call the global createSpreadingEffect from ripple.js
             const isComplete = createSpreadingEffect(
                 this.screenManager,
                 effect.x,
                 effect.y,
                 effect.maxDistance,
-                (distance, wavePosition) => {
-                    return randomBrightColor();
+                (distance, wavePosition, cellKey) => {
+
+                    let cellState = effect.cellColorStates.get(cellKey);
+                    const currentTime = Date.now();
+
+                    if (!cellState) { // If this cell is new to the effect or its state was cleared
+                        cellState = {
+                            color: randomBrightColor(),
+                            lastChangeTime: currentTime
+                        };
+                        effect.cellColorStates.set(cellKey, cellState);
+                    } else {
+                        // Check if the hold time for this specific cell has elapsed
+                        if (currentTime - cellState.lastChangeTime > effect.colorHoldMs) {
+                            cellState.color = randomBrightColor();
+                            cellState.lastChangeTime = currentTime;
+                        }
+                    }
+                    return cellState.color;
                 },
                 effect.startTime,
                 effect.speed,
                 effect.fadeTime,
                 effect.originalColor
             );
+
+            // When an effect is complete, its cellColorStates map will be garbage collected along with the effect object.
             return !isComplete; // Keep if NOT complete
         });
     }

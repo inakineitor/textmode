@@ -97,12 +97,12 @@ function createSpreadingEffect(
           // Apply color based on position within the wave front
           const wavePosition =
             1.0 - (currentWaveFront - distance) / waveFrontDistance;
-          color = colorFunction(distance, wavePosition);
+          color = colorFunction(distance, wavePosition, key);
         }
         // Otherwise, calculate fade between wave color and original color
         else {
           // Get the wave front color (using position 1.0 for the peak of the wave)
-          const waveColor = colorFunction(distance, 1.0);
+          const waveColor = colorFunction(distance, 1.0, key);
 
           // Calculate fade progress (0 = wave color, 1 = original color)
           const fadeProgress = Math.min(
