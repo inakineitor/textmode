@@ -22,7 +22,7 @@ let randomCharProvider;
 export function init() {
     const canvas = document.getElementById("mainCanvas");
     sourceFont = new Image();
-    sourceFont.src = "font.png"; // Assuming font.png is in the same directory or accessible
+    sourceFont.src = "static/fonts/font.png"; // Assuming font.png is in the same directory or accessible
 
     sourceFont.onload = () => {
         const { numRows, numCols } = calculateScreenDimensions(canvas);
@@ -61,10 +61,10 @@ export function init() {
 
         const initialWaves = [
             [6, 4, secondsFromStart(5)],
-            [17, 4, secondsFromStart(7)],
-            [31, 9, secondsFromStart(8.45)],
-            [43, 10, secondsFromStart(9.5)],
-            [57, 5, secondsFromStart(10.75)],
+            [17, 4, secondsFromStart(7), 15, 5],
+            [31, 9, secondsFromStart(8.45), 29, 9],
+            [43, 10, secondsFromStart(9.5), 41, 10],
+            [57, 5, secondsFromStart(10.75), 57, 5],
         ];
 
         for (const [relX, relY, time] of initialWaves) {
@@ -85,7 +85,19 @@ export function init() {
 
             const charX = Math.floor(canvasX / (canvas.width / screenManager.charsWide));
             const charY = Math.floor(canvasY / (canvas.height / screenManager.charsHigh));
-            effectsManager.startNewEffect(charX, charY);
+
+            console.log(charX - nameContentAbsoluteStartCol, charY - nameContentAbsoluteStartRow);
+            
+            // Define the onCellVisit callback function
+            const onCellVisit = (x, y, distance) => {
+                // Example: Change characters to '!' when the wave passes through
+                
+                // Additional actions could be performed here
+                // For example, play a sound effect based on distance
+                // Or spawn additional effects at these coordinates
+            };
+            
+            effectsManager.startNewEffect(charX, charY, Date.now(), {}, onCellVisit);
         });
 
         requestAnimationFrame(mainLoop);
