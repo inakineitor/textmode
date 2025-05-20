@@ -61,17 +61,22 @@ export function init() {
 
         const initialWaves = [
             [6, 4, secondsFromStart(5)],
-            [17, 4, secondsFromStart(7), 15, 5],
+            [17, 4, secondsFromStart(7), 15, 5], // 4th and 5th values are name-relative trigger coordinates
             [31, 9, secondsFromStart(8.45), 29, 9],
             [43, 10, secondsFromStart(9.5), 41, 10],
             [57, 5, secondsFromStart(10.75), 57, 5],
         ];
 
-        for (const [relX, relY, time] of initialWaves) {
+        const getClampedAbsCoords = (relX, relY) => {
             const absX = nameContentAbsoluteStartCol + relX;
             const absY = nameContentAbsoluteStartRow + relY;
             const clampedAbsX = clamp(absX, 0, screenManager.charsWide - 1);
             const clampedAbsY = clamp(absY, 0, screenManager.charsHigh - 1);
+            return [clampedAbsX, clampedAbsY];
+        }
+
+        for (const [relX, relY, time] of initialWaves) {
+            const [clampedAbsX, clampedAbsY] = getClampedAbsCoords(relX, relY);
             effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
         }
 
@@ -86,18 +91,36 @@ export function init() {
             const charX = Math.floor(canvasX / (canvas.width / screenManager.charsWide));
             const charY = Math.floor(canvasY / (canvas.height / screenManager.charsHigh));
 
-            console.log(charX - nameContentAbsoluteStartCol, charY - nameContentAbsoluteStartRow);
-            
-            // Define the onCellVisit callback function
-            const onCellVisit = (x, y, distance) => {
-                // Example: Change characters to '!' when the wave passes through
-                
-                // Additional actions could be performed here
-                // For example, play a sound effect based on distance
-                // Or spawn additional effects at these coordinates
-            };
-            
+            console.log(`Click at (abs: ${charX},${charY}) (rel: ${charX - nameContentAbsoluteStartCol},${charY - nameContentAbsoluteStartRow})`);
+
+            // Define recursive onCellVisit callback function to create chain reactions
+            // const onCellVisit = (x, y) => {
+            //     // Check if this coordinate matches any trigger point from initialWaves
+            //     for (const [relX, relY, time, triggerRelX, triggerRelY] of initialWaves) {
+            //         if (triggerRelX === undefined || triggerRelY === undefined) continue;
+
+            //         // Convert trigger coordinates from name-relative to absolute
+            //         const triggerAbsX = nameContentAbsoluteStartCol + triggerRelX;
+            //         const triggerAbsY = nameContentAbsoluteStartRow + triggerRelY;
+
+            //         // If the wave hits a trigger point, start a new effect there
+            //         if (x === triggerAbsX && y === triggerAbsY) {
+            //             const [clampedAbsX, clampedAbsY] = getClampedAbsCoords(relX, relY);
+            //             console.log('Wave triggered:');
+            //             console.log(`- at [${x},${y}]`);
+            //             console.log(`- start at [${clampedAbsX},${clampedAbsY}]`);
+            //             // Use the same callback for cascading effects
+
+            //             effectsManager.startNewEffect(clampedAbsX, clampedAbsY, Date.now() + 10000, {});
+            //             console.log('New effect started');
+            //             break;
+            //         }
+            //     }
+            // };
+            const onCellVisit = null;
+            // effectsManager.startNewEffect(charX, charY, Date.now(), {}, onCellVisit);
             effectsManager.startNewEffect(charX, charY, Date.now(), {}, onCellVisit);
+
         });
 
         requestAnimationFrame(mainLoop);
