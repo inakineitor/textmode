@@ -1,8 +1,9 @@
 <html>
   <head>
-    <script type="text/javascript" src="js/textmode.js"></script>
-    <script type="text/javascript" src="js/ripple.js"></script>
-    <script type="text/javascript" src="js/main.js"></script>
+    <script type="module">
+      import { init } from './js/main.js';
+      window.init = init;
+    </script>
   </head>
   <body onload="init();" style="margin: 0; width: 100svw; height: 100svh">
     <canvas

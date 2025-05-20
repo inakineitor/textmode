@@ -1,3 +1,5 @@
+// ripple.js - Spreading wave effects
+
 /**
  * Creates a single spreading color effect from a coordinate, coloring adjacent non-whitespace characters
  * Effect shoots out once from the origin point based on elapsed time,
@@ -16,7 +18,7 @@
  * @param {Map} cellColorStatesMap - Map to store { color, lastChangeTime } for cells
  * @returns {boolean} - Whether the effect is complete
  */
-function createSpreadingEffect(
+export function createSpreadingEffect(
   screenManager,
   startX,
   startY,
@@ -162,25 +164,25 @@ function createSpreadingEffect(
  */
 
 // Bright color that stays visible at the wave front
-function waveFrontBrightColor(distance, wavePosition) {
+export function waveFrontBrightColor(distance, wavePosition) {
   // Use bright colors (9-15) for the wave front
   return 9 + Math.floor(wavePosition * 6);
 }
 
 // Bright white color for the wave front
-function brightWhiteWave(distance, wavePosition) {
+export function brightWhiteWave(distance, wavePosition) {
   // Return white (0x0F) for the wave front
   return 0x0f;
 }
 
 // Color that changes based on the distance from origin
-function distanceBasedColor(distance, wavePosition) {
+export function distanceBasedColor(distance, wavePosition) {
   // Use different colors based on distance rings
   return 9 + (distance % 6);
 }
 
 // Color that pulses based on distance (creates ring-like waves)
-function pulseWaveColor(distance, wavePosition) {
+export function pulseWaveColor(distance, wavePosition) {
   // Create a "pulse" effect with brighter colors at the wave front
   if (wavePosition > 0.7) {
     return 0x0f; // White at the leading edge
@@ -192,7 +194,7 @@ function pulseWaveColor(distance, wavePosition) {
 }
 
 // Blue to white gradient based on wave position
-function blueToWhiteGradient(distance, wavePosition) {
+export function blueToWhiteGradient(distance, wavePosition) {
   // Create a blue to white gradient based on wave position
   const colors = [0x01, 0x09, 0x0b, 0x0f]; // Dark blue, light blue, light cyan, white
   const index = Math.min(

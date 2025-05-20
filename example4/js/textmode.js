@@ -1,7 +1,9 @@
+// textmode.js - Text mode screen management
+
 const CHARACTER_WIDTH = 16;
 const CHARACTER_HEIGHT = 24;
 
-class TextModeScreen {
+export class TextModeScreen {
   /**
    * 16 value colour table
    */
@@ -188,3 +190,5 @@ class TextModeScreen {
     }
   }
 }
+
+export { CHARACTER_WIDTH, CHARACTER_HEIGHT };
