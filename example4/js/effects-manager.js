@@ -24,8 +24,12 @@ export class EffectsManager {
             fadeTime: effectConfig.FADE_TIME_SEC,
             originalColor: effectConfig.ORIGINAL_COLOR,
             colorHoldMs: effectConfig.COLOR_HOLD_MS,   
-            cellColorStates: new Map(), // Owned by EffectsManager, passed to ripple.js
-            onCellVisit // Store the callback function
+            onCellVisit, // Store the callback function
+            // Create a single state object with both color states and visited cells
+            state: {
+                cellColorStates: new Map(), // Stores color information
+                visitedCells: new Set()     // Tracks visited cells for callbacks
+            }
         });
     }
 
@@ -42,8 +46,8 @@ export class EffectsManager {
                 effect.fadeTime,    // Assuming fadeTime is on effect or default in ripple.js
                 effect.originalColor, // Assuming originalColor is on effect or default in ripple.js
                 effect.colorHoldMs,   // Pass the hold duration
-                effect.cellColorStates, // Pass the state map for this effect
-                effect.onCellVisit // Pass the callback function
+                effect.state,          // Pass the state object with both cellColorStates and visitedCells
+                effect.onCellVisit     // Pass the callback function
             );
             return !isComplete; 
         });

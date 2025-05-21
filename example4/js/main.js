@@ -75,9 +75,39 @@ export function init() {
             return [clampedAbsX, clampedAbsY];
         }
 
-        for (const [relX, relY, time] of initialWaves) {
+        // const waveReaction = (x, y) => {
+        //     for (const [relX, relY, time, triggerRelX, triggerRelY] of initialWaves) {
+        //         if (triggerRelX === undefined || triggerRelY === undefined) continue;
+
+                
+        //         const [triggerAbsX, triggerAbsY] = getClampedAbsCoords(triggerRelX, triggerRelY);
+
+        //         if (x === triggerAbsX && y === triggerAbsY) {
+        //             const [clampedAbsX, clampedAbsY] = getClampedAbsCoords(relX, relY);
+        //             console.log(`wave reaction at [${clampedAbsX}, ${clampedAbsY}] for trigger at [${triggerRelX},${triggerRelY}]`);
+        //             effectsManager.startNewEffect(clampedAbsX, clampedAbsY, Date.now(), {}, null);
+        //         }
+        //     }
+        // };
+
+        // const [clampedAbsX, clampedAbsY] = getClampedAbsCoords(initialWaves[0][0], initialWaves[0][1]);
+        // effectsManager.startNewEffect(
+        //     clampedAbsX,
+        //     clampedAbsY,
+        //     initialWaves[0][2] - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000,
+        //     {},
+        //     waveReaction
+        // );
+
+        for (const [relX, relY, time, triggerRelX, triggerRelY] of initialWaves) {
             const [clampedAbsX, clampedAbsY] = getClampedAbsCoords(relX, relY);
-            effectsManager.startNewEffect(clampedAbsX, clampedAbsY, time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000);
+
+            effectsManager.startNewEffect(
+                clampedAbsX,
+                clampedAbsY,
+                time - CONFIG.INITIAL_WAVES_DELAY_SEC * 1000,
+                {},
+            );
         }
 
         canvas.addEventListener("click", (e) => {
@@ -94,31 +124,34 @@ export function init() {
             console.log(`Click at (abs: ${charX},${charY}) (rel: ${charX - nameContentAbsoluteStartCol},${charY - nameContentAbsoluteStartRow})`);
 
             // Define recursive onCellVisit callback function to create chain reactions
-            // const onCellVisit = (x, y) => {
+            // const onCellVisit = (x, y, distance) => {
             //     // Check if this coordinate matches any trigger point from initialWaves
             //     for (const [relX, relY, time, triggerRelX, triggerRelY] of initialWaves) {
             //         if (triggerRelX === undefined || triggerRelY === undefined) continue;
 
             //         // Convert trigger coordinates from name-relative to absolute
-            //         const triggerAbsX = nameContentAbsoluteStartCol + triggerRelX;
-            //         const triggerAbsY = nameContentAbsoluteStartRow + triggerRelY;
+            //         const [triggerAbsX, triggerAbsY] = getClampedAbsCoords(triggerRelX, triggerRelY);
 
             //         // If the wave hits a trigger point, start a new effect there
             //         if (x === triggerAbsX && y === triggerAbsY) {
             //             const [clampedAbsX, clampedAbsY] = getClampedAbsCoords(relX, relY);
-            //             console.log('Wave triggered:');
-            //             console.log(`- at [${x},${y}]`);
-            //             console.log(`- start at [${clampedAbsX},${clampedAbsY}]`);
-            //             // Use the same callback for cascading effects
+            //             console.log(`Wave triggered new effect at [${clampedAbsX},${clampedAbsY}]`);
 
-            //             effectsManager.startNewEffect(clampedAbsX, clampedAbsY, Date.now() + 10000, {});
-            //             console.log('New effect started');
+            //             // Create a new onCellVisit callback for the triggered wave to avoid infinite loops
+            //             // const nestedCallback = (nx, ny, nd) => {
+            //             //     console.log(`Nested cell visited: [${nx},${ny}] at distance ${nd}`);
+            //             //     // No further cascading to prevent infinite loops
+            //             // };
+
+            //             // Use a different callback for the cascade to prevent infinite loops
+            //             effectsManager.startNewEffect(clampedAbsX, clampedAbsY, Date.now(), {}, null);
             //             break;
             //         }
             //     }
             // };
+
             const onCellVisit = null;
-            // effectsManager.startNewEffect(charX, charY, Date.now(), {}, onCellVisit);
+
             effectsManager.startNewEffect(charX, charY, Date.now(), {}, onCellVisit);
 
         });

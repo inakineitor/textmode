@@ -15,7 +15,9 @@
  * @param {number} fadeTime - Time it takes for a cell to fade back to original color (seconds)
  * @param {number} originalColor - The color to fade back to (default 0x0F for white)
  * @param {number} colorHoldMs - Time to hold color for a cell
- * @param {Map} cellColorStatesMap - Map to store { color, lastChangeTime } for cells
+ * @param {Object} stateObject - Object containing state data preserved across calls
+ * @param {Map} stateObject.cellColorStates - Map to store { color, lastChangeTime } for cells
+ * @param {Set} stateObject.visitedCells - Set to track cells that have already triggered the callback
  * @param {Function} [onCellVisit] - Optional callback when a cell is visited for the first time: (x, y, distance) => void
  * @returns {boolean} - Whether the effect is complete
  */
@@ -30,7 +32,7 @@ export function createSpreadingEffect(
   fadeTime = 1.5,
   originalColor = 0x0f,
   colorHoldMs,
-  cellColorStatesMap,
+  stateObject,
   onCellVisit
 ) {
   // Ensure coordinates are within bounds
@@ -55,10 +57,12 @@ export function createSpreadingEffect(
     return true;
   }
 
-  // Track which cells we've already processed
+  // Get references to the state maps
+  const cellColorStatesMap = stateObject.cellColorStates;
+  const visited = stateObject.visitedCells;
+
+  // Track which cells we've already processed in this frame
   const processed = new Set();
-  // Track which cells have been visited by the wave front for the first time
-  const visited = new Set();
 
   // Queue for breadth-first search, starting with the origin point and distance 0
   const queue = [[startX, startY, 0]];
