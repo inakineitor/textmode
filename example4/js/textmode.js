@@ -8,7 +8,7 @@ export class TextModeScreen {
    * 16 value colour table
    */
   #COLOR_TABLE = [
-    "#000000",
+    "transparent",
     "#0000AA",
     "#00AA00",
     "#00AAAA",
@@ -63,6 +63,9 @@ export class TextModeScreen {
    * Render buffers to the HTML canvas
    * */
   presentToScreen() {
+    // Clear the entire canvas to ensure transparency works correctly
+    this.context2d.clearRect(0, 0, this.context2d.canvas.width, this.context2d.canvas.height);
+    
     for (
       let readPosition = 0;
       readPosition < this.charsWide * this.charsHigh;
@@ -87,17 +90,22 @@ export class TextModeScreen {
         CHARACTER_WIDTH,
         CHARACTER_HEIGHT,
       );
-      this.context2d.drawImage(
-        this.coloredFonts[colorId & 15],
-        characterSpriteX,
-        characterSpriteY,
-        CHARACTER_WIDTH,
-        CHARACTER_HEIGHT,
-        startX,
-        startY,
-        CHARACTER_WIDTH,
-        CHARACTER_HEIGHT,
-      );
+      
+      // Only draw the character if the foreground color is not transparent (not 0)
+      const foregroundColor = colorId & 15;
+      if (foregroundColor !== 0) {
+        this.context2d.drawImage(
+          this.coloredFonts[foregroundColor],
+          characterSpriteX,
+          characterSpriteY,
+          CHARACTER_WIDTH,
+          CHARACTER_HEIGHT,
+          startX,
+          startY,
+          CHARACTER_WIDTH,
+          CHARACTER_HEIGHT,
+        );
+      }
     }
   }
 
