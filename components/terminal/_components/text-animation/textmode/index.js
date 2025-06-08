@@ -95,7 +95,7 @@ export class TextModeScreen {
 			);
 
 			// Only draw the character if the foreground color is not transparent (not 0)
-			if (foregroundColor !== 0) {
+			if (foregroundColorCode !== 0) {
 				this.context2d.drawImage(
 					this.canvasFont.getColoredFont(foregroundColor),
 					characterSpriteX,

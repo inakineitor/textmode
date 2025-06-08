@@ -1,12 +1,20 @@
 export class CanvasFont {
   cachedColoredFonts = new Map();
+  conversionCanvasContext = document.createElement("canvas").getContext("2d");
   sourceFont = undefined;
 
   constructor(sourceFont) {
     this.sourceFont = sourceFont;
   }
 
-  getColoredFont(color) {
+  normalizeColor(cssColorString) {
+    this.conversionCanvasContext.fillStyle = cssColorString;
+    return this.conversionCanvasContext.fillStyle;
+  }
+
+  getColoredFont(cssColorString) {
+    const color = this.normalizeColor(cssColorString);
+    
     if (this.cachedColoredFonts.has(color)) {
       return this.cachedColoredFonts.get(color);
     }
