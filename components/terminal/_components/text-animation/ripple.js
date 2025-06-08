@@ -13,7 +13,7 @@
  * @param {number} startTime - Time when the effect started (milliseconds)
  * @param {number} speed - Speed of the spreading wave (cells per second)
  * @param {number} fadeTime - Time it takes for a cell to fade back to original color (seconds)
- * @param {number[]} originalColor - The color tuple to fade back to (default [0, 15] for transparent background, white foreground)
+ * @param {string[]} originalColor - The color tuple to fade back to (default [0, 15] for transparent background, white foreground)
  * @param {number} colorHoldMs - Time to hold color for a cell
  * @param {Object} stateObject - Object containing state data preserved across calls
  * @param {Map} stateObject.cellColorStates - Map to store { color, lastChangeTime } for cells
@@ -30,7 +30,7 @@ export function createSpreadingEffect(
   startTime,
   speed = 15,
   fadeTime = 1.5,
-  originalColor = [0, 15],
+  originalColor = ["transparent", "#FFFFFF"],
   colorHoldMs,
   stateObject,
   onCellVisit
@@ -182,43 +182,58 @@ export function createSpreadingEffect(
 
 // Bright color that stays visible at the wave front
 export function waveFrontBrightColor(distance, wavePosition) {
-  // Use bright colors (9-15) for the wave front
-  const foreground = 9 + Math.floor(wavePosition * 6);
-  return [0, foreground];
+  const COLORS = [
+    "#5555FF",
+    "#55FF55",
+    "#55FFFF",
+    "#FF5555",
+    "#FF55FF",
+    "#FFFF55"
+  ];
+  const foreground = COLORS[Math.floor(wavePosition * 6)];
+  return ["transparent", foreground];
 }
 
 // Bright white color for the wave front
 export function brightWhiteWave(distance, wavePosition) {
   // Return white foreground with transparent background
-  return [0, 15];
+  return ["transparent", "#FFFFFF"];
 }
 
 // Color that changes based on the distance from origin
 export function distanceBasedColor(distance, wavePosition) {
   // Use different colors based on distance rings
-  const foreground = 9 + (distance % 6);
-  return [0, foreground];
+  const COLORS = [
+    "#5555FF",
+    "#55FF55",
+    "#55FFFF",
+    "#FF5555",
+    "#FF55FF",
+    "#FFFF55"
+  ];
+  const foreground = COLORS[distance % 6];
+  return ["transparent", foreground];
 }
 
 // Color that pulses based on distance (creates ring-like waves)
 export function pulseWaveColor(distance, wavePosition) {
   // Create a "pulse" effect with brighter colors at the wave front
   if (wavePosition > 0.7) {
-    return [0, 15]; // White at the leading edge
+    return ["transparent", "#FFFFFF"]; // White at the leading edge
   } else if (wavePosition > 0.4) {
-    return [0, 11]; // Light cyan
+    return ["transparent", "#55FFFF"]; // Light cyan
   } else {
-    return [0, 9]; // Light blue
+    return ["transparent", "#5555FF"]; // Light blue
   }
 }
 
 // Blue to white gradient based on wave position
 export function blueToWhiteGradient(distance, wavePosition) {
   // Create a blue to white gradient based on wave position
-  const colors = [1, 9, 11, 15]; // Dark blue, light blue, light cyan, white
+  const COLORS = ["#0000AA", "#5555FF", "#55FFFF", "#FFFFFF"]; // Dark blue, light blue, light cyan, white
   const index = Math.min(
-    Math.floor(wavePosition * colors.length),
-    colors.length - 1,
+    Math.floor(wavePosition * COLORS.length),
+    COLORS.length - 1,
   );
-  return [0, colors[index]];
+  return ["transparent", COLORS[index]];
 }

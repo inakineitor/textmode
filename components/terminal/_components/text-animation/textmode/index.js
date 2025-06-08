@@ -6,28 +6,6 @@ const CHARACTER_WIDTH = 16;
 const CHARACTER_HEIGHT = 24;
 
 export class TextModeScreen {
-	/**
-	 * 16 value colour table
-	 */
-	#COLOR_TABLE = [
-		"transparent",
-		"#0000AA",
-		"#00AA00",
-		"#00AAAA",
-		"#AA0000",
-		"#AA00AA",
-		"#AA5500",
-		"#AAAAAA",
-		"#555555",
-		"#5555FF",
-		"#55FF55",
-		"#55FFFF",
-		"#FF5555",
-		"#FF55FF",
-		"#FFFF55",
-		"#FFFFFF"
-	];
-
 	constructor(charsWide, charsHigh, canvas, sourceFont) {
 		if (!canvas) {
 			alert("Failed to find canvas");
@@ -45,8 +23,8 @@ export class TextModeScreen {
 		this.charsWide = charsWide;
 		this.charsHigh = charsHigh;
 		this.charBuffer = new Uint8Array(charsWide * charsHigh);
-		this.backgroundColorBuffer = new Uint8Array(charsWide * charsHigh);
-		this.foregroundColorBuffer = new Uint8Array(charsWide * charsHigh);
+		this.backgroundColorBuffer = Array(charsWide * charsHigh).fill("transparent");
+		this.foregroundColorBuffer = Array(charsWide * charsHigh).fill("transparent");
 
 		// Create foreground font colours
 		this.canvasFont = new CanvasFont(sourceFont);
@@ -76,16 +54,14 @@ export class TextModeScreen {
 			const startX = x * CHARACTER_WIDTH;
 
 			const charId = this.charBuffer[readPosition];
-			const backgroundColorCode = this.backgroundColorBuffer[readPosition];
-			const backgroundColor = this.#COLOR_TABLE[backgroundColorCode];
-			const foregroundColorCode = this.foregroundColorBuffer[readPosition];
-			const foregroundColor = this.#COLOR_TABLE[foregroundColorCode];
+			// Direct CSS color strings
+			const backgroundColor = this.backgroundColorBuffer[readPosition];
+			const foregroundColor = this.foregroundColorBuffer[readPosition];
 
-			const characterSpriteX =
-				(charId & 0x0f) * CHARACTER_WIDTH;
-			const characterSpriteY =
-				(charId >> 4) * CHARACTER_HEIGHT;
+			const characterSpriteX = (charId & 0x0f) * CHARACTER_WIDTH;
+			const characterSpriteY = (charId >> 4) * CHARACTER_HEIGHT;
 
+			// Draw background
 			this.context2d.fillStyle = backgroundColor;
 			this.context2d.fillRect(
 				startX,
@@ -94,8 +70,8 @@ export class TextModeScreen {
 				CHARACTER_HEIGHT
 			);
 
-			// Only draw the character if the foreground color is not transparent (not 0)
-			if (foregroundColorCode !== 0) {
+			// Only draw the character if the foreground color is not transparent
+			if (foregroundColor !== "transparent") {
 				this.context2d.drawImage(
 					this.canvasFont.getColoredFont(foregroundColor),
 					characterSpriteX,
@@ -116,7 +92,7 @@ export class TextModeScreen {
 	 * @param {number} x - X position
 	 * @param {number} y - Y position  
 	 * @param {string} text - Text to print
-	 * @param {number[]} colorTuple - [background, foreground] color indices
+	 * @param {string[]} colorTuple - [background, foreground] CSS color strings
 	 */
 	print(x, y, text, colorTuple) {
 		if (y < 0 || y >= this.charsHigh) return;
@@ -138,7 +114,7 @@ export class TextModeScreen {
 	 * @param {number} y - Y position
 	 * @param {number} width - Width
 	 * @param {number} height - Height
-	 * @param {number[]} colorTuple - [background, foreground] color indices
+	 * @param {string[]} colorTuple - [background, foreground] CSS color strings
 	 */
 	printBox(x, y, width, height, colorTuple) {
 		const topLeft = String.fromCharCode(201);

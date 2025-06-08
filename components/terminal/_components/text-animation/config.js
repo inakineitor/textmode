@@ -32,7 +32,7 @@ const CONFIG = {
         START_ROW_FACTOR: 5 / 6,
         BOX_WIDTH_PADDING: 4,
         BOX_HEIGHT: 3,
-        COLOR: [0, 15], // [background=0 (transparent), foreground=15 (white)]
+        COLOR: ["transparent", "#FFFFFF"], // [background=0 (transparent), foreground=15 (white)]
         ANIM_START_DELAY_SEC: 3.1, // Time after initial name animation might settle
         ANIM_TOTAL_DELAY_SEC: 6.25, // Additional delay for full scroll sign effect start
         ANIM_REVEAL_SPEED_FACTOR: 70,
@@ -55,7 +55,7 @@ const CONFIG = {
         MAX_DISTANCE: 100,
         SPEED_CELLS_PER_SEC: 10,
         FADE_TIME_SEC: 0.6,
-        ORIGINAL_COLOR: [0, 15], // [background=0 (transparent), foreground=15 (white)]
+        ORIGINAL_COLOR: ["transparent", "#FFFFFF"], // [background=0 (transparent), foreground=15 (white)]
         COLOR_HOLD_MS: 40, // Default duration to hold a wave color
     },
     INITIAL_WAVES_DELAY_SEC: 2.25,

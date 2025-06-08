@@ -175,14 +175,14 @@ function mainLoop() {
     // However, if they only use screenManager.print(), this might not be strictly necessary
     // depending on TextModeScreen's internal workings. For safety, let's keep it.
     const previousCharBuffer = new Uint8Array(screenManager.charBuffer);
-    const previousBackgroundColorBuffer = new Uint8Array(screenManager.backgroundColorBuffer);
-    const previousForegroundColorBuffer = new Uint8Array(screenManager.foregroundColorBuffer);
+    const previousBackgroundColorBuffer = [...screenManager.backgroundColorBuffer];
+    const previousForegroundColorBuffer = [...screenManager.foregroundColorBuffer];
 
     // Fill the screen with random background
     for (let i = 0; i < screenManager.charsWide * screenManager.charsHigh; i++) {
         screenManager.charBuffer[i] = randomCharProvider.getRandomCharAscii();
-        screenManager.backgroundColorBuffer[i] = 0; // Transparent background
-        screenManager.foregroundColorBuffer[i] = 0; // Transparent foreground (background characters)
+        screenManager.backgroundColorBuffer[i] = "transparent"; // Transparent background
+        screenManager.foregroundColorBuffer[i] = "transparent"; // Transparent foreground (background characters)
     }
 
     const timeInSecondsSinceStart = (Date.now() - startTime) / 1000;

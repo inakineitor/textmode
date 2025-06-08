@@ -83,7 +83,7 @@ export class NameAnimator {
                 startCol + col,
                 startRow + row,
                 char,
-                setWhite ? [0, 15] : displayedLongAgo ? prevColor : randomBrightColor()
+                setWhite ? ["transparent", "#FFFFFF"] : displayedLongAgo ? prevColor : randomBrightColor()
             );
         }
     }
