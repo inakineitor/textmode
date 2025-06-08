@@ -49,24 +49,7 @@ export class TextModeScreen {
 		this.foregroundColorBuffer = new Uint8Array(charsWide * charsHigh);
 
 		// Create foreground font colours
-		this.canvasFont = new Map();
-		for (let i = 0; i < this.#COLOR_TABLE.length; i++) {
-			this.canvasFont[i] = document.createElement("canvas");
-			this.canvasFont[i].width = sourceFont.width;
-			this.canvasFont[i].height = sourceFont.height;
-			const bufferContext =
-				this.canvasFont[i].getContext("2d");
-			bufferContext.fillStyle = this.#COLOR_TABLE[i];
-			bufferContext.fillRect(
-				0,
-				0,
-				sourceFont.width,
-				sourceFont.height
-			);
-			bufferContext.globalCompositeOperation =
-				"destination-atop";
-			bufferContext.drawImage(sourceFont, 0, 0);
-		}
+		this.canvasFont = new CanvasFont(sourceFont);
 	}
 
 	/**
@@ -93,16 +76,17 @@ export class TextModeScreen {
 			const startX = x * CHARACTER_WIDTH;
 
 			const charId = this.charBuffer[readPosition];
-			const backgroundColor = this.backgroundColorBuffer[readPosition];
-			const foregroundColor = this.foregroundColorBuffer[readPosition];
+			const backgroundColorCode = this.backgroundColorBuffer[readPosition];
+			const backgroundColor = this.#COLOR_TABLE[backgroundColorCode];
+			const foregroundColorCode = this.foregroundColorBuffer[readPosition];
+			const foregroundColor = this.#COLOR_TABLE[foregroundColorCode];
 
 			const characterSpriteX =
 				(charId & 0x0f) * CHARACTER_WIDTH;
 			const characterSpriteY =
 				(charId >> 4) * CHARACTER_HEIGHT;
 
-			this.context2d.fillStyle =
-				this.#COLOR_TABLE[backgroundColor];
+			this.context2d.fillStyle = backgroundColor;
 			this.context2d.fillRect(
 				startX,
 				startY,
@@ -113,7 +97,7 @@ export class TextModeScreen {
 			// Only draw the character if the foreground color is not transparent (not 0)
 			if (foregroundColor !== 0) {
 				this.context2d.drawImage(
-					this.canvasFont[foregroundColor],
+					this.canvasFont.getColoredFont(foregroundColor),
 					characterSpriteX,
 					characterSpriteY,
 					CHARACTER_WIDTH,

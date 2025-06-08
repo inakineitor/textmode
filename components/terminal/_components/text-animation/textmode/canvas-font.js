@@ -1,5 +1,6 @@
 export class CanvasFont {
   cachedColoredFonts = new Map();
+  sourceFont = undefined;
 
   constructor(sourceFont) {
     this.sourceFont = sourceFont;
@@ -19,12 +20,12 @@ export class CanvasFont {
     bufferContext.fillRect(
       0,
       0,
-      sourceFont.width,
-      sourceFont.height
+      this.sourceFont.width,
+      this.sourceFont.height
     );
     bufferContext.globalCompositeOperation =
       "destination-atop";
-    bufferContext.drawImage(sourceFont, 0, 0);
+    bufferContext.drawImage(this.sourceFont, 0, 0);
 
     this.cachedColoredFonts.set(color, coloredFont);
     return coloredFont;

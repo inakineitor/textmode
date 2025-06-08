@@ -1,6 +1,6 @@
 // main.js - Main application module using ES modules
 
-import { TextModeScreen } from './textmode.js';
+import { TextModeScreen } from './textmode/index.js';
 import { CONFIG, NAME_ART } from './config.js';
 import { calculateScreenDimensions, clamp, RandomCharProvider } from './utils.js';
 import { NameAnimator } from './name-animator.js';
