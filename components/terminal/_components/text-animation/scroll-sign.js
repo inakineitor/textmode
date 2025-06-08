@@ -159,7 +159,7 @@ export class ScrollSign {
         for (let i = 0; i < totalDrawnSignElements; i++) {
             const [x, y, charInCoordinateEntry] = this.coordinates[i];
             let charToPrint = charInCoordinateEntry;
-            let colorToUse = terminalTextColor;
+            let colorToUse = ["transparent", terminalTextColor];
 
             if (i < numInitialClearChars) {
                 // Stage 1: Initial clear. charInCoordinateEntry is ' '. Print as is.
