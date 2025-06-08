@@ -1,5 +1,7 @@
 // textmode.js - Text mode screen management
 
+import { CanvasFont } from "./canvas-font.js";
+
 const CHARACTER_WIDTH = 16;
 const CHARACTER_HEIGHT = 24;
 
@@ -47,13 +49,13 @@ export class TextModeScreen {
 		this.foregroundColorBuffer = new Uint8Array(charsWide * charsHigh);
 
 		// Create foreground font colours
-		this.coloredFonts = new Array(this.#COLOR_TABLE.length);
-		for (let i = 0; i < this.coloredFonts.length; i++) {
-			this.coloredFonts[i] = document.createElement("canvas");
-			this.coloredFonts[i].width = sourceFont.width;
-			this.coloredFonts[i].height = sourceFont.height;
+		this.canvasFont = new Map();
+		for (let i = 0; i < this.#COLOR_TABLE.length; i++) {
+			this.canvasFont[i] = document.createElement("canvas");
+			this.canvasFont[i].width = sourceFont.width;
+			this.canvasFont[i].height = sourceFont.height;
 			const bufferContext =
-				this.coloredFonts[i].getContext("2d");
+				this.canvasFont[i].getContext("2d");
 			bufferContext.fillStyle = this.#COLOR_TABLE[i];
 			bufferContext.fillRect(
 				0,
@@ -111,7 +113,7 @@ export class TextModeScreen {
 			// Only draw the character if the foreground color is not transparent (not 0)
 			if (foregroundColor !== 0) {
 				this.context2d.drawImage(
-					this.coloredFonts[foregroundColor],
+					this.canvasFont[foregroundColor],
 					characterSpriteX,
 					characterSpriteY,
 					CHARACTER_WIDTH,
