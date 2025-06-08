@@ -43,6 +43,8 @@ export class NameAnimator {
         const startRow = Math.floor((this.screenManager.charsHigh - this.nameHeight) * START_ROW_FACTOR);
         const startCol = Math.floor((this.screenManager.charsWide - this.nameWidth) / 2);
 
+        const terminalTextColor = getComputedStyle(document.getElementsByClassName("terminal")[0]).getPropertyValue("color");
+
         for (let i = 0; i < this.mergedName.length; i++) {
             if (!revealedMask[i]) continue;
 
@@ -83,7 +85,7 @@ export class NameAnimator {
                 startCol + col,
                 startRow + row,
                 char,
-                setWhite ? ["transparent", "#FFFFFF"] : displayedLongAgo ? prevColor : randomBrightColor()
+                setWhite ? ["transparent", terminalTextColor] : displayedLongAgo ? prevColor : randomBrightColor()
             );
         }
     }

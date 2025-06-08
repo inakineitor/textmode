@@ -154,10 +154,12 @@ export class ScrollSign {
 
         const PAUSE_ANIMATION_STEPS = Math.floor(this.instructionText.length * PAUSE_FACTOR) + PAUSE_FLAT;
 
+        const terminalTextColor = getComputedStyle(document.getElementsByClassName("terminal")[0]).getPropertyValue("color");
+
         for (let i = 0; i < totalDrawnSignElements; i++) {
             const [x, y, charInCoordinateEntry] = this.coordinates[i];
             let charToPrint = charInCoordinateEntry;
-            let colorToUse = COLOR;
+            let colorToUse = terminalTextColor;
 
             if (i < numInitialClearChars) {
                 // Stage 1: Initial clear. charInCoordinateEntry is ' '. Print as is.

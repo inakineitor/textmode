@@ -8,7 +8,7 @@ export async function boot() {
 
 	init();
 
-	await type(["THIS CODE IS BEING RUN ###"]);
+	// await type(["THIS CODE IS BEING RUN ###"]);
 
 	// await pause();
 	// return login();
