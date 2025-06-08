@@ -89,17 +89,15 @@ export function calculateScreenDimensions(canvasEl) {
  * Returns a random bright color tuple [background, foreground]
  */
 export function randomBrightColor() {
-    // Corrected palette: bright colors are 10-14 (inclusive)
-    // Base is 10, and there are 5 possibilities (10, 11, 12, 13, 14).
     const COLORS = [
         "#55FFFF",
         "#FF5555",
         "#FF55FF",
         "#FFFF55",
-        "#FFFFFF"
+        // "#FFFFFF"
     ];
-    const foreground = COLORS[Math.floor(Math.random() * 5)];
-    return ["transparent", foreground]; // [background=0 (transparent), foreground=bright color]
+    const foreground = COLORS[Math.floor(Math.random() * COLORS.length)];
+    return ["transparent", foreground];
 }
 
 /**
