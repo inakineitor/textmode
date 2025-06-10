@@ -84,7 +84,7 @@ html {
 }
 
 body {
-	background: #111;
+	background: #ffffff;
 	margin: 0;
 	overflow: hidden;
 	font-family: sans-serif;
@@ -153,7 +153,8 @@ a {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	background: #3f3933;
+	/* background: #3f3933; */
+	background: #C9C7AF;
 	border-radius: 0.5rem;
 }
 #monitor:not(.off) {
@@ -162,10 +163,11 @@ a {
 #screen {
 	position: relative;
 	border: 30px solid transparent;
-	border-image-source: url(/static/images/bezel-gray.png);
+	border-image-source: url(/static/images/bezel-cream.png);
 	border-image-slice: 30 fill;
 	border-image-outset: 0;
 	overflow: hidden;
+	filter: brightness(1);
 }
 /* The screen itself + border */
 #crt,
