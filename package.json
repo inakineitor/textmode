@@ -4,11 +4,17 @@
 	"description": "Emulating an oldschool CRT terminal  with scanlines, flickering text and all the retro good stuff.\n\nInspired by hackertyper and the hacking minigame from the Fallout game series.\n\nSee the article: \n\nhttps://dev.to/ekeijl/retro-crt-terminal-screen-in-css-js-4afh",
 	"main": "index.html",
 	"scripts": {
-		"start": "serve"
+		"dev": "astro dev",
+		"start": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview"
 	},
 	"keywords": [],
 	"author": "Edwin Keijl",
 	"license": "MIT",
+	"dependencies": {
+		"astro": "^5.9.1"
+	},
 	"devDependencies": {
 		"serve": "^11.2.0"
 	}

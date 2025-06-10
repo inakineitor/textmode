@@ -1,0 +1,93 @@
+---
+// CRT Terminal component - the main terminal interface
+---
+
+<div id="monitor" class="off">
+  <div id="screen">
+    <div id="crt">
+      <div class="scanline"></div>
+      <div class="terminal">
+        <canvas
+          id="mainCanvas"
+          width="0"
+          height="0"
+          style="width: 100%; height: 100%;"
+        ></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div id="slider">
+    <label class="switch">
+      <input type="checkbox" />
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div id="controls">
+    <div id="sticky" class="post-it">
+      <u>password</u><br />hotdog
+    </div>
+
+    <div id="themes">
+      <button id="theme-red" class="theme"></button>
+      <button id="theme-green" class="theme active"></button>
+      <button id="theme-blue" class="theme"></button>
+    </div>
+
+    <div id="volume">
+      <span>min</span>
+      <div id="dial-container">
+        <x-dial
+          id="dial"
+          min="0"
+          max="0.75"
+          value="0"
+          svgsymbolid="circle-with-dot"
+        >
+        </x-dial>
+      </div>
+      <span>max</span>
+    </div>
+
+    <div id="power">
+      <button id="fullscreen">⛶</button>
+      <label class="rocker rocker-small">
+        <input id="switch" type="checkbox" checked />
+        <span class="switch-left">O</span>
+        <span class="switch-right">I</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Main initialization function
+  async function initializeTerminal() {
+    // Import the terminal modules
+    const { toggleFullscreen } = await import("/src/components/terminal/_components/crt-monitor/screens.js");
+    const { registerHandlers } = await import("/src/components/terminal/_components/crt-monitor/ui.mjs");
+    const { on } = await import("/src/components/terminal/_components/crt-monitor/power.js");
+
+    // Check for query parameters in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const fullscreen = urlParams.get("fullscreen");
+
+    // Set up click event handlers for UI buttons
+    registerHandlers();
+
+    if (fullscreen) {
+      toggleFullscreen(true);
+    }
+
+    // Turn on the terminal
+    on();
+  }
+
+  // Initialize when the page loads
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeTerminal);
+  } else {
+    initializeTerminal();
+  }
+</script> 

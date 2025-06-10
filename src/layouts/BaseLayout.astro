@@ -1,0 +1,74 @@
+---
+export interface Props {
+  title?: string;
+}
+
+const { title = "TERMINAL v0.01-alpha" } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>{title}</title>
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    
+    <!-- Import styles -->
+    <style>
+      @import "../styles/animations.css";
+      @import "../styles/style.css";
+      @import "../styles/switch.css";
+    </style>
+    
+    <!-- SVG definitions -->
+    <svg style="display: none">
+      <style>
+        .handle {
+          cursor: grab;
+        }
+      </style>
+      <defs id="sample_gfx">
+        <symbol id="circle-with-dot" viewBox="-6 -6 12 12">
+          <circle
+            cx="0"
+            cy="0"
+            r="5.875"
+            stroke="#2e3436"
+            fill="#babdb6"
+            stroke-width="0.25"
+          />
+          <circle
+            class="handle"
+            cx="0"
+            cy="-3.75"
+            r="0.75"
+            stroke="none"
+            fill="#2e3436"
+          />
+        </symbol>
+      </defs>
+    </svg>
+    
+    <!-- External dependencies -->
+    <script src="https://unpkg.com/rot-js@2.1.1/dist/rot.js"></script>
+    
+    <!-- Dial component -->
+    <script src="/src/components/dial/index.js"></script>
+  </head>
+  
+  <body class="theme-green">
+    <slot />
+    
+    <!-- Import map for modules -->
+    <script type="importmap">
+      {
+        "imports": {
+          "sound": "/src/utils/sound/index.js",
+          "util/": "/src/components/terminal/_components/crt-monitor/"
+        }
+      }
+    </script>
+  </body>
+</html> 
