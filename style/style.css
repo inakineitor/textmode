@@ -154,7 +154,7 @@ a {
 	flex-direction: column;
 	align-items: center;
 	/* background: #3f3933; */
-	background: #C9C7AF;
+	background: #c9c7af;
 	border-radius: 0.5rem;
 }
 #monitor:not(.off) {
@@ -183,11 +183,7 @@ pre {
 	); /* Scale the font-size relative to the minimum screen dimension */
 	position: relative;
 	background: var(--bg);
-	background-image: radial-gradient(
-		ellipse,
-		var(--bg) 0%,
-		var(--off) 90%
-	);
+	background-image: radial-gradient(ellipse, var(--bg) 0%, var(--off) 90%);
 	animation: on 2s linear;
 	transition: all 0.5s;
 	overflow: hidden;
@@ -267,7 +263,7 @@ body.fullscreen #crt {
 	position: relative;
 	height: 100%;
 	padding: 2rem;
-	overflow-y: auto;
+	overflow-y: hidden;
 	overflow-x: hidden;
 	word-break: break-word;
 	text-transform: uppercase;
@@ -564,7 +560,9 @@ input:checked + .slider:before {
 		top: 50%;
 		right: 50%;
 		opacity: 1;
-		transition: top 1s ease-out, right 1s ease-out,
+		transition:
+			top 1s ease-out,
+			right 1s ease-out,
 			opacity 1s ease-out;
 		animation: glow 3s ease-in-out infinite;
 	}
