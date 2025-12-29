@@ -5,7 +5,7 @@ let keys = [
 	new Audio("./static/sound/key1.mp3"),
 	new Audio("./static/sound/key2.mp3"),
 	new Audio("./static/sound/key3.mp3"),
-	new Audio("./static/sound/key4.mp3")
+	new Audio("./static/sound/key4.mp3"),
 ];
 
 function button() {
