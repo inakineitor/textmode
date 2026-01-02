@@ -76,8 +76,6 @@
 html {
 	font-size: 12px;
 	box-sizing: border-box;
-	/* TODO: Check */
-	background-color: transparent;
 }
 *,
 *:before,
