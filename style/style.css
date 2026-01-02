@@ -84,7 +84,9 @@ html {
 }
 
 body {
-	background: #ffffff;
+	/* background: #ffffff; */
+	/* TODO: Check */
+	background: transparent;
 	margin: 0;
 	overflow: hidden;
 	font-family: sans-serif;
