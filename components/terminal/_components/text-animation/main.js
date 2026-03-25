@@ -18,8 +18,29 @@ let effectsManager;
 let startTime;
 let sourceFont;
 let randomCharProvider;
+let animationFrameId = null;
+let clickHandler = null;
+let resizeObserver = null;
+
+export function destroy() {
+    if (animationFrameId != null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+    const canvas = document.getElementById("mainCanvas");
+    if (clickHandler && canvas) {
+        canvas.removeEventListener("click", clickHandler);
+        clickHandler = null;
+    }
+    if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+    }
+    screenManager = null;
+}
 
 export function init() {
+    destroy(); // Clean up any previous instance
     const canvas = document.getElementById("mainCanvas");
     sourceFont = new Image();
     sourceFont.src = "static/images/computer-font.png"; // Assuming font.png is in the same directory or accessible
@@ -39,7 +60,7 @@ export function init() {
         scrollSign = new ScrollSign(screenManager, CONFIG);
         effectsManager = new EffectsManager(screenManager, CONFIG);
 
-        const resizeObserver = new ResizeObserver(([canvasEntry]) => {
+        resizeObserver = new ResizeObserver(([canvasEntry]) => {
             const { contentRect: { width, height } } = canvasEntry;
             // console.log(width, height, "Canvas resized");
             // Add logic here if screenManager needs to be re-initialized or adjusted on resize
@@ -110,7 +131,7 @@ export function init() {
             );
         }
 
-        canvas.addEventListener("click", (e) => {
+        clickHandler = (e) => {
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
@@ -154,9 +175,10 @@ export function init() {
 
             effectsManager.startNewEffect(charX, charY, Date.now(), {}, onCellVisit);
 
-        });
+        };
+        canvas.addEventListener("click", clickHandler);
 
-        requestAnimationFrame(mainLoop);
+        animationFrameId = requestAnimationFrame(mainLoop);
     };
 
     sourceFont.onerror = () => {
@@ -192,5 +214,5 @@ function mainLoop() {
     effectsManager.update();
 
     screenManager.presentToScreen();
-    requestAnimationFrame(mainLoop); // Schedule the next frame
+    animationFrameId = requestAnimationFrame(mainLoop); // Schedule the next frame
 }
