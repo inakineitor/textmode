@@ -1,7 +1,13 @@
 import { on, off } from "./power.js";
 import { click } from "../../../../utils/sound/index.js";
 import { setVolume } from "./speak.js";
-import { toggleFullscreen } from "./screens.js";
+
+/** @type {import('./screens.js').Screen} */
+let screen = null;
+
+export function setScreen(s) {
+	screen = s;
+}
 
 function togglePower() {
 	let isOff = document.getElementById("monitor").classList.contains("off");
@@ -42,17 +48,17 @@ function theme(event, name) {
 }
 
 function fullscreen(event) {
-	toggleFullscreen();
+	screen.toggleFullscreen();
 	event.target.blur();
 }
 
 function globalListener({ keyCode }) {
 	if (keyCode === 122) {
 		// F11
-		toggleFullscreen();
+		screen.toggleFullscreen();
 	} else if (keyCode === 27) {
 		// ESC
-		toggleFullscreen(false);
+		screen.toggleFullscreen(false);
 	}
 }
 

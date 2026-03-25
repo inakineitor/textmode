@@ -1,17 +1,24 @@
 import { type } from "./io.js";
 
-import { init } from "../text-animation/main.js";
+import { TerminalAnimation } from "../text-animation/main.js";
 
-/** Boot screen */
-export async function boot() {
-	// clear(); // Don't run because it deletes the canvas
+export class Screen {
+	#animation = null;
 
-	init();
+	boot() {
+		const canvas = document.getElementById("mainCanvas");
+		this.#animation = new TerminalAnimation(canvas);
+		this.#animation.init();
+	}
 
-	// await type(["THIS CODE IS BEING RUN ###"]);
+	shutdown() {
+		this.#animation?.destroy();
+		this.#animation = null;
+	}
 
-	// await pause();
-	// return login();
+	toggleFullscreen(isFullscreen) {
+		document.body.classList.toggle("fullscreen", isFullscreen);
+	}
 }
 
 export function addClasses(el, ...cls) {
@@ -24,10 +31,6 @@ export function getScreen(...cls) {
 	addClasses(div, "fullscreen", ...cls);
 	document.querySelector("#crt").appendChild(div);
 	return div;
-}
-
-export function toggleFullscreen(isFullscreen) {
-	document.body.classList.toggle("fullscreen", isFullscreen);
 }
 
 /**

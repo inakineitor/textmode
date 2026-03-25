@@ -1,17 +1,23 @@
-import { toggleFullscreen } from "./_components/crt-monitor/screens.js";
-import { registerHandlers } from "./_components/crt-monitor/ui.mjs";
+import { Screen } from "./_components/crt-monitor/screens.js";
+import { registerHandlers, setScreen as setScreenUI } from "./_components/crt-monitor/ui.mjs";
+import { setScreen as setScreenPower } from "./_components/crt-monitor/power.js";
 
 async function onLoad() {
-	// Check for query parameters in the URL, e.g. ?command=help&fullscreen=1
 	const urlParams = new URLSearchParams(window.location.search);
 	const fullscreen = urlParams.get("fullscreen");
+
+	const screen = new Screen();
+
+	// Wire the screen instance into modules that need it
+	setScreenUI(screen);
+	setScreenPower(screen);
+
 	const { on } = await import("./_components/crt-monitor/power.js");
 
-	// Set up click event handlers for UI buttons
 	registerHandlers();
 
 	if (fullscreen) {
-		toggleFullscreen(true);
+		screen.toggleFullscreen(true);
 	}
 
 	on();
